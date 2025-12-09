@@ -1,18 +1,17 @@
 # Security-Shelly-Plug-S-gen1
 
 ## Fase 1
-Accesso Fisico, Analisi e estrazione firmware
+Physical Access, Firmware Analysis and Extraction
 
 ## Fase 2 
 Creare Firmware malevolo:
  
-* Attacco Side-Channel (NILM) tramite lettura, esfiltrazione (via UDP) e analisi (ML) dei consumi elettrici per dedurre abitudini utente.
-
+Side-Channel Attack (NILM) through reading, exfiltration (via UDP) and analysis (ML) of power consumption to infer user habits.
 ## Fase 3 
-Creare Firmware Sicuro:
+Make Secure firmware:
 
 * MQTTS
 * Secure Boot
 
 ## Fase 4 
-Attacco Flashing OTA (MITM)
+Flashing OTA attack(MITM)
