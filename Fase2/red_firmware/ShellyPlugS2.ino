@@ -38,7 +38,7 @@ const char* WIFI_SSID     = "TUO_SSID";
 const char* WIFI_PASSWORD = "TUA_PASSWORD";
 
 // MQTT
-const char* MQTT_SERVER   = "192.168.1.100";
+const char* MQTT_SERVER   = "192.168.122.1";
 const int   MQTT_PORT     = 1883;
 const char* MQTT_USER     = "utente";
 const char* MQTT_PASSWORD = "password";
