@@ -42,7 +42,7 @@ const char* MQTT_SERVER   = "192.168.122.1";
 const int   MQTT_PORT     = 1883;
 const char* MQTT_USER     = "utente";
 const char* MQTT_PASSWORD = "password";
-const char* MQTT_BASE     = "shellies/plug-s";   // topic base
+const char* MQTT_BASE     = "shellies/plug-s";   
 
 // OTA
 const char* OTA_URL          = "";                // URL del file .bin (lascia vuoto per disabilitare)

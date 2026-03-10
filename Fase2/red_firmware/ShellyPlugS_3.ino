@@ -61,10 +61,10 @@ const unsigned long SEND_INTERVAL_MS = 60000;   // pubblica energia ogni 60s
 char payload[256];
 
 /* ================== PARAMETRI NTC ================== */
-const double R_PULLUP        = 32000.0;
-const double R_NTC_NOMINAL   = 10000.0;
 const double TEMP_NOMINAL    = 25.0;
-const double BETA_COEFFICIENT = 3350.0;
+const double R_PULLUP         = 10000.0;  
+const double R_NTC_NOMINAL    = 10000.0;   
+const double BETA_COEFFICIENT = 3350.0;    
 
 /* ================== TOPIC MQTT ================== */
 // I topic vengono costruiti dinamicamente con device_id in setup()
@@ -322,10 +322,23 @@ void setup() {
   snprintf(TOPIC_ONLINE,       sizeof(TOPIC_ONLINE),       "%s/online",            device_id);
 
   // ── HLW8012 ─────────────────────────────────────────────────
+  // ── HLW8012 con valori corretti Shelly Plug S Gen1 ──────────
   hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
-  hlw8012.setResistors(0.001, 2000000, 1000);
-  attachInterrupt(CF1_PIN, hlw8012_cf1_interrupt, CHANGE);
-  attachInterrupt(CF_PIN,  hlw8012_cf_interrupt,  CHANGE);
+
+  // Resistori reali Shelly Plug S Gen1:
+  // - Shunt corrente: 1mΩ  (0.001 Ω)
+  // - Partitore tensione R1: 2.48MΩ (2480000 Ω)
+  // - Partitore tensione R2: 1kΩ   (1000 Ω)
+  hlw8012.setResistors(0.001, 2480000, 1000);
+
+  // Moltiplicatori di calibrazione empirici per Shelly Plug S
+  // (ricavati da misure reali con tester certificato)
+  hlw8012.setCurrentMultiplier(13170.0);
+  hlw8012.setVoltageMultiplier(477800.0);
+  hlw8012.setPowerMultiplier(10420000.0);
+
+  attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(CF_PIN),  hlw8012_cf_interrupt,  CHANGE);
 
   // ── MQTT ────────────────────────────────────────────────────
   mqtt.setServer(mqtt_server, atoi(mqtt_port));
