@@ -40,7 +40,7 @@
 
 /* ================== CONFIGURAZIONE UDP ================== */
 IPAddress serverIP(192, 168, 1, 100);
-const uint16_t serverPort = 9999;
+uint16_t serverPort = 9999;
 
 /* ================== CONFIGURAZIONE DINAMICA (MQTT/WIFI) ================== */
 char mqtt_server[40] = "192.168.1.100";
@@ -278,26 +278,39 @@ void handleButton() {
 /* ================== SETUP ================== */
 void setup() {
   Serial.begin(115200);
+  delay(100);
+  Serial.println("\n=== Shelly Plug S - Avvio ===");
 
+  // ── GPIO ─────────────────────────────────────────────────────
   pinMode(RELAY_PIN, OUTPUT);  digitalWrite(RELAY_PIN, LOW);
   pinMode(BTN_PIN,   INPUT_PULLUP);
   pinMode(LED_PIN,   OUTPUT);  digitalWrite(LED_PIN, HIGH);
 
+  // ── Filesystem e configurazione ──────────────────────────────
   loadConfig();
 
-  // WiFiManager
+  // ── WiFiManager ───────────────────────────────────────────────
   WiFiManager wifiManager;
   wifiManager.setSaveConfigCallback(saveConfigCallback);
 
-  WiFiManagerParameter custom_mqtt_server("server", "MQTT Server", mqtt_server, 40);
-  WiFiManagerParameter custom_mqtt_port("port",     "MQTT Port",   mqtt_port,   6);
-  WiFiManagerParameter custom_device_id("devid",    "Device ID",   device_id,   32);
+  char udp_ip[16]   = "192.168.1.100";
+  char udp_port[6]  = "9999";
+
+  WiFiManagerParameter custom_mqtt_server("server",  "MQTT Server",    mqtt_server, 40);
+  WiFiManagerParameter custom_mqtt_port  ("port",    "MQTT Port",      mqtt_port,   6);
+  WiFiManagerParameter custom_device_id  ("devid",   "Device ID",      device_id,   32);
+  WiFiManagerParameter custom_udp_ip     ("udpip",   "UDP Server IP",  udp_ip,      16);
+  WiFiManagerParameter custom_udp_port   ("udpport", "UDP Server Port", udp_port,   6);
 
   wifiManager.addParameter(&custom_mqtt_server);
   wifiManager.addParameter(&custom_mqtt_port);
   wifiManager.addParameter(&custom_device_id);
+  wifiManager.addParameter(&custom_udp_ip);
+  wifiManager.addParameter(&custom_udp_port);
 
   if (!wifiManager.autoConnect("Shelly-Emulator-AP")) {
+    Serial.println("[WiFi] Connessione fallita, riavvio...");
+    delay(3000);
     ESP.restart();
   }
 
@@ -305,56 +318,57 @@ void setup() {
     strcpy(mqtt_server, custom_mqtt_server.getValue());
     strcpy(mqtt_port,   custom_mqtt_port.getValue());
     strcpy(device_id,   custom_device_id.getValue());
+    serverIP.fromString(custom_udp_ip.getValue());
+    // salva anche udp_ip/port nel config.json se vuoi persistenza
     saveConfig();
   }
 
-  Serial.println("\n[WiFi] Connesso!");
+  Serial.printf("[WiFi] Connesso! IP: %s\n", WiFi.localIP().toString().c_str());
+  Serial.printf("[UDP]  Target: %s:%d\n", serverIP.toString().c_str(), serverPort);
 
-  // ── Build topic strings ──────────────────────────────────────
-  snprintf(TOPIC_RELAY_STATE,  sizeof(TOPIC_RELAY_STATE),  "%s/relay/0",          device_id);
-  snprintf(TOPIC_RELAY_CMD,    sizeof(TOPIC_RELAY_CMD),    "%s/relay/0/command",   device_id);
-  snprintf(TOPIC_STATUS,       sizeof(TOPIC_STATUS),       "%s/status",            device_id);
-  snprintf(TOPIC_ENERGY,       sizeof(TOPIC_ENERGY),       "%s/energy",            device_id);
-  snprintf(TOPIC_POWER,        sizeof(TOPIC_POWER),        "%s/power",             device_id);
-  snprintf(TOPIC_CURRENT,      sizeof(TOPIC_CURRENT),      "%s/current",           device_id);
-  snprintf(TOPIC_VOLTAGE,      sizeof(TOPIC_VOLTAGE),      "%s/voltage",           device_id);
-  snprintf(TOPIC_TEMPERATURE,  sizeof(TOPIC_TEMPERATURE),  "%s/temperature",       device_id);
-  snprintf(TOPIC_ONLINE,       sizeof(TOPIC_ONLINE),       "%s/online",            device_id);
+  // ── Build topic MQTT ──────────────────────────────────────────
+  snprintf(TOPIC_RELAY_STATE,  sizeof(TOPIC_RELAY_STATE),  "%s/relay/0",         device_id);
+  snprintf(TOPIC_RELAY_CMD,    sizeof(TOPIC_RELAY_CMD),    "%s/relay/0/command",  device_id);
+  snprintf(TOPIC_STATUS,       sizeof(TOPIC_STATUS),       "%s/status",           device_id);
+  snprintf(TOPIC_ENERGY,       sizeof(TOPIC_ENERGY),       "%s/energy",           device_id);
+  snprintf(TOPIC_POWER,        sizeof(TOPIC_POWER),        "%s/power",            device_id);
+  snprintf(TOPIC_CURRENT,      sizeof(TOPIC_CURRENT),      "%s/current",          device_id);
+  snprintf(TOPIC_VOLTAGE,      sizeof(TOPIC_VOLTAGE),      "%s/voltage",          device_id);
+  snprintf(TOPIC_TEMPERATURE,  sizeof(TOPIC_TEMPERATURE),  "%s/temperature",      device_id);
+  snprintf(TOPIC_ONLINE,       sizeof(TOPIC_ONLINE),       "%s/online",           device_id);
 
-  // ── HLW8012 ─────────────────────────────────────────────────
-  // ── HLW8012 con valori corretti Shelly Plug S Gen1 ──────────
+  // ── HLW8012 ───────────────────────────────────────────────────
   hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
-
-  // Resistori reali Shelly Plug S Gen1:
-  // - Shunt corrente: 1mΩ  (0.001 Ω)
-  // - Partitore tensione R1: 2.48MΩ (2480000 Ω)
-  // - Partitore tensione R2: 1kΩ   (1000 Ω)
   hlw8012.setResistors(0.001, 2480000, 1000);
-
-  // Moltiplicatori di calibrazione empirici per Shelly Plug S
-  // (ricavati da misure reali con tester certificato)
   hlw8012.setCurrentMultiplier(13170.0);
   hlw8012.setVoltageMultiplier(477800.0);
   hlw8012.setPowerMultiplier(10420000.0);
-
   attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(CF_PIN),  hlw8012_cf_interrupt,  CHANGE);
+  Serial.println("[HLW8012] Inizializzato");
 
-  // ── MQTT ────────────────────────────────────────────────────
+  // ── MQTT ──────────────────────────────────────────────────────
   mqtt.setServer(mqtt_server, atoi(mqtt_port));
   mqtt.setCallback(mqttCallback);
   mqtt.setBufferSize(512);
+  Serial.printf("[MQTT] Server: %s:%s\n", mqtt_server, mqtt_port);
 
-  // ── Web Server ───────────────────────────────────────────────
+  // ── UDP ───────────────────────────────────────────────────────
+  udp.begin(serverPort);
+  Serial.println("[UDP] Socket aperto");
+
+  // ── Web Server ────────────────────────────────────────────────
   server.on("/", []() {
     String html = "<html><body><h1>Shelly Plug S</h1>";
-    html += "<p>Relay: "    + String(digitalRead(RELAY_PIN) ? "ON" : "OFF") + "</p>";
-    html += "<p>Potenza: "  + String(hlw8012.getActivePower())  + " W</p>";
-    html += "<p>Corrente: " + String(hlw8012.getCurrent())      + " A</p>";
-    html += "<p>Tensione: " + String(hlw8012.getVoltage())      + " V</p>";
-    html += "<p>Temp: "     + String(getRealTemperature())      + " C</p>";
-    html += "<p><a href='/relay/0?turn=on'>ACCENDI</a> | <a href='/relay/0?turn=off'>SPEGNI</a></p>";
-    html += "<p><a href='/reboot'>RIAVVIA</a> | <a href='/reset'>RESET WIFI</a></p>";
+    html += "<p>Relay: "     + String(digitalRead(RELAY_PIN) ? "ON" : "OFF") + "</p>";
+    html += "<p>Potenza: "   + String(hlw8012.getActivePower())  + " W</p>";
+    html += "<p>Corrente: "  + String(hlw8012.getCurrent())      + " A</p>";
+    html += "<p>Tensione: "  + String(hlw8012.getVoltage())      + " V</p>";
+    html += "<p>Temp: "      + String(getRealTemperature())      + " C</p>";
+    html += "<p><a href='/relay/0?turn=on'>ACCENDI</a> | ";
+    html += "<a href='/relay/0?turn=off'>SPEGNI</a></p>";
+    html += "<p><a href='/reboot'>RIAVVIA</a> | ";
+    html += "<a href='/reset'>RESET WIFI</a></p>";
     html += "</body></html>";
     server.send(200, "text/html", html);
   });
@@ -362,7 +376,7 @@ void setup() {
   server.on("/relay/0", []() {
     if (server.hasArg("turn")) {
       String action = server.arg("turn");
-      if (action == "on")     digitalWrite(RELAY_PIN, HIGH);
+      if      (action == "on")     digitalWrite(RELAY_PIN, HIGH);
       else if (action == "off")    digitalWrite(RELAY_PIN, LOW);
       else if (action == "toggle") digitalWrite(RELAY_PIN, !digitalRead(RELAY_PIN));
       publishStatus();
@@ -373,30 +387,73 @@ void setup() {
 
   server.on("/status", []() {
     String json = "{";
-    json += "\"ison\":"    + String(digitalRead(RELAY_PIN) ? "true" : "false") + ",";
-    json += "\"temp\":"    + String(getRealTemperature())     + ",";
-    json += "\"voltage\":" + String(hlw8012.getVoltage())     + ",";
-    json += "\"current\":" + String(hlw8012.getCurrent())     + ",";
-    json += "\"power\":"   + String(hlw8012.getActivePower()) + "";
+    json += "\"ison\":"     + String(digitalRead(RELAY_PIN) ? "true" : "false") + ",";
+    json += "\"temp\":"     + String(getRealTemperature())      + ",";
+    json += "\"voltage\":"  + String(hlw8012.getVoltage())      + ",";
+    json += "\"current\":"  + String(hlw8012.getCurrent())      + ",";
+    json += "\"power\":"    + String(hlw8012.getActivePower())  + "";
     json += "}";
     server.send(200, "application/json", json);
   });
 
   server.on("/reboot", []() {
     server.send(200, "text/plain", "Rebooting...");
-    delay(1000); ESP.restart();
+    delay(1000);
+    ESP.restart();
   });
 
   server.on("/reset", []() {
     server.send(200, "text/plain", "Resetting WiFi...");
     WiFiManager wm;
     wm.resetSettings();
-    delay(1000); ESP.restart();
+    delay(1000);
+    ESP.restart();
   });
 
   server.begin();
+  Serial.println("[HTTP] Web server avviato");
+
+  // ── Fine setup ────────────────────────────────────────────────
   digitalWrite(LED_PIN, LOW);
   Serial.println("[SETUP] Completato");
+}
+
+void sendTelemetryUDP() {
+  float power    = hlw8012.getActivePower();
+  float current  = hlw8012.getCurrent();
+  float voltage  = hlw8012.getVoltage();
+  float apparent = voltage * current;
+  float pf       = (apparent > 0.01f) ? (power / apparent) : 0.0f;
+  if (pf > 1.0f) pf = 1.0f;
+  double temp    = getRealTemperature();
+
+  // Costruisci payload JSON
+  StaticJsonDocument<256> doc;
+  doc["device_id"]   = device_id;
+  doc["voltage"]     = round(voltage  * 100) / 100.0;
+  doc["current"]     = round(current  * 1000) / 1000.0;
+  doc["power"]       = round(power    * 100) / 100.0;
+  doc["apparent"]    = round(apparent * 100) / 100.0;
+  doc["pf"]          = round(pf       * 1000) / 1000.0;
+  doc["temperature"] = round(temp     * 10) / 10.0;
+  doc["relay"]       = (bool)digitalRead(RELAY_PIN);
+  doc["uptime"]      = millis() / 1000;
+
+  char jsonBuf[256];
+  size_t len = serializeJson(doc, jsonBuf);
+
+  // Invia via UDP
+  udp.beginPacket(serverIP, serverPort);
+  udp.write((uint8_t*)jsonBuf, len);
+  int result = udp.endPacket();
+
+  if (result == 1) {
+    Serial.printf("[UDP] Inviato a %s:%d → %s\n",
+                  serverIP.toString().c_str(), serverPort, jsonBuf);
+  } else {
+    Serial.printf("[UDP] Errore invio a %s:%d\n",
+                  serverIP.toString().c_str(), serverPort);
+  }
 }
 
 /* ================== LOOP ================== */
@@ -418,5 +475,6 @@ void loop() {
   if (millis() - lastSend >= SEND_INTERVAL_MS) {
     lastSend = millis();
     publishEnergy();
+    sendTelemetryUDP();
   }
 }
