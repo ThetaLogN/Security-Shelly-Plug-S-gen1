@@ -338,7 +338,6 @@ void setup() {
   snprintf(TOPIC_ONLINE,       sizeof(TOPIC_ONLINE),       "%s/online",           device_id);
 
   // ── HLW8012 ───────────────────────────────────────────────────
-  // ── HLW8012 calibrazione sul campo ───────────────────────────
   hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
   hlw8012.setResistors(0.001, 2480000, 1000);
   hlw8012.expectedVoltage(228.0);       // ← metti il valore reale misurato
@@ -348,6 +347,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(CF_PIN),  hlw8012_cf_interrupt,  CHANGE);
   Serial.println("[HLW8012] Inizializzato con calibrazione");
+
 
   // ── MQTT ──────────────────────────────────────────────────────
   mqtt.setServer(mqtt_server, atoi(mqtt_port));
