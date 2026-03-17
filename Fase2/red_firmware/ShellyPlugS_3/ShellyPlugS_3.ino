@@ -26,6 +26,7 @@
 #include <WiFiManager.h>
 #include <ArduinoJson.h>
 #include <math.h>
+#include <ESP8266HTTPUpdateServer.h>
 
 /* ================== HARDWARE ================== */
 #define RELAY_PIN   15
@@ -37,6 +38,8 @@
 #define ANALOG_PIN  A0
 
 #define CURRENT_MODE HIGH
+
+ESP8266HTTPUpdateServer httpUpdater;
 
 /* ================== CONFIGURAZIONE UDP ================== */
 IPAddress serverIP(192, 168, 1, 100);
@@ -281,6 +284,7 @@ void setup() {
   delay(100);
   Serial.println("\n=== Shelly Plug S - Avvio ===");
 
+
   // ── GPIO ─────────────────────────────────────────────────────
   pinMode(RELAY_PIN, OUTPUT);  digitalWrite(RELAY_PIN, LOW);
   pinMode(BTN_PIN,   INPUT_PULLUP);
@@ -340,14 +344,9 @@ void setup() {
   // ── HLW8012 ───────────────────────────────────────────────────
   hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
   hlw8012.setResistors(0.001, 2480000, 1000);
-
-  // Valori REALI misurati del tuo carico di test (lato AC):
-  // - Tensione rete: misura con multimetro sulla presa → es. 228V
-  // - Potenza:       quella dell'alimentatore lato AC  → ~9W (con perdite)
-  // - Corrente:      P/V → 9/228 = 0.039A
-  hlw8012.expectedVoltage(228.0);       // ← metti il valore reale misurato
-  hlw8012.expectedActivePower(9.0);     // ← potenza AC stimata (con perdite)
-  hlw8012.expectedCurrent(0.039);       // ← corrente AC = P/V
+  hlw8012.expectedVoltage(228.0);      
+  hlw8012.expectedActivePower(9.0);    
+  hlw8012.expectedCurrent(0.039);      
 
   attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(CF_PIN),  hlw8012_cf_interrupt,  CHANGE);
@@ -366,16 +365,31 @@ void setup() {
 
   // ── Web Server ────────────────────────────────────────────────
   server.on("/", []() {
-    String html = "<html><body><h1>Shelly Plug S</h1>";
-    html += "<p>Relay: "     + String(digitalRead(RELAY_PIN) ? "ON" : "OFF") + "</p>";
-    html += "<p>Potenza: "   + String(hlw8012.getActivePower())  + " W</p>";
-    html += "<p>Corrente: "  + String(hlw8012.getCurrent())      + " A</p>";
-    html += "<p>Tensione: "  + String(hlw8012.getVoltage())      + " V</p>";
-    html += "<p>Temp: "      + String(getRealTemperature())      + " C</p>";
-    html += "<p><a href='/relay/0?turn=on'>ACCENDI</a> | ";
-    html += "<a href='/relay/0?turn=off'>SPEGNI</a></p>";
-    html += "<p><a href='/reboot'>RIAVVIA</a> | ";
-    html += "<a href='/reset'>RESET WIFI</a></p>";
+    String html = "<html><head>";
+    html += "<meta charset='utf-8'>";
+    html += "<style>";
+    html += "body{font-family:sans-serif;max-width:400px;margin:40px auto;padding:0 20px;}";
+    html += "h1{font-size:1.4em;} .btn{display:inline-block;padding:8px 16px;";
+    html += "background:#333;color:#fff;text-decoration:none;border-radius:4px;margin:4px;}";
+    html += ".btn-red{background:#c0392b;} .val{font-weight:bold;color:#2980b9;}";
+    html += "table{width:100%;border-collapse:collapse;margin:16px 0;}";
+    html += "td{padding:8px;border-bottom:1px solid #eee;}";
+    html += "</style></head><body>";
+    html += "<h1>Shelly Plug S</h1>";
+    html += "<table>";
+    html += "<tr><td>Relay</td><td class='val'>"    + String(digitalRead(RELAY_PIN) ? "ON" : "OFF") + "</td></tr>";
+    html += "<tr><td>Tensione</td><td class='val'>" + String(hlw8012.getVoltage())      + " V</td></tr>";
+    html += "<tr><td>Corrente</td><td class='val'>" + String(hlw8012.getCurrent())      + " A</td></tr>";
+    html += "<tr><td>Potenza</td><td class='val'>"  + String(hlw8012.getActivePower())  + " W</td></tr>";
+    html += "<tr><td>Temperatura</td><td class='val'>" + String(getRealTemperature())   + " °C</td></tr>";
+    html += "<tr><td>Uptime</td><td class='val'>"   + String(millis()/1000)             + " s</td></tr>";
+    html += "<tr><td>Versione FW</td><td class='val'>2.0.0</td></tr>";
+    html += "</table>";
+    html += "<a class='btn' href='/relay/0?turn=on'>ACCENDI</a> ";
+    html += "<a class='btn' href='/relay/0?turn=off'>SPEGNI</a><br><br>";
+    html += "<a class='btn' href='/update'>⬆ Aggiorna Firmware</a><br><br>";
+    html += "<a class='btn btn-red' href='/reboot'>Riavvia</a> ";
+    html += "<a class='btn btn-red' href='/reset'>Reset WiFi</a>";
     html += "</body></html>";
     server.send(200, "text/html", html);
   });
@@ -416,6 +430,9 @@ void setup() {
     delay(1000);
     ESP.restart();
   });
+
+   // ── OTA via Web UI ────────────────────────────────────────────
+  httpUpdater.setup(&server, "/update");
 
   server.begin();
   Serial.println("[HTTP] Web server avviato");
