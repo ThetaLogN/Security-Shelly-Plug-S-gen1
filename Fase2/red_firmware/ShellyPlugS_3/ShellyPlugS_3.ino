@@ -31,9 +31,9 @@
 /* ================== HARDWARE ================== */
 #define RELAY_PIN   15
 #define SEL_PIN     12
-#define CF1_PIN     14
-#define CF_PIN       5
-#define LED_PIN      0
+#define CF1_PIN     5
+#define CF_PIN      14
+#define LED_PIN     0
 #define BTN_PIN     13
 #define ANALOG_PIN  A0
 
@@ -42,7 +42,7 @@
 ESP8266HTTPUpdateServer httpUpdater;
 
 /* ================== CONFIGURAZIONE UDP ================== */
-IPAddress serverIP(192, 168, 1, 100);
+IPAddress serverIP(10, 200, 45, 150);
 uint16_t serverPort = 9999;
 
 /* ================== CONFIGURAZIONE DINAMICA (MQTT/WIFI) ================== */
@@ -343,10 +343,10 @@ void setup() {
 
   // ── HLW8012 ───────────────────────────────────────────────────
   hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
-  hlw8012.setResistors(0.001, 2480000, 1000);
-  hlw8012.expectedVoltage(228.0);      
-  hlw8012.expectedActivePower(9.0);    
-  hlw8012.expectedCurrent(0.039);      
+  hlw8012.setResistors(0.001, 2350000, 1000);
+  hlw8012.expectedVoltage(230.0);      
+  hlw8012.expectedActivePower(10.0);    
+  hlw8012.expectedCurrent(0.4);      
 
   attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(CF_PIN),  hlw8012_cf_interrupt,  CHANGE);
@@ -383,7 +383,7 @@ void setup() {
     html += "<tr><td>Potenza</td><td class='val'>"  + String(hlw8012.getActivePower())  + " W</td></tr>";
     html += "<tr><td>Temperatura</td><td class='val'>" + String(getRealTemperature())   + " °C</td></tr>";
     html += "<tr><td>Uptime</td><td class='val'>"   + String(millis()/1000)             + " s</td></tr>";
-    html += "<tr><td>Versione FW</td><td class='val'>2.0.0</td></tr>";
+    html += "<tr><td>Versione FW</td><td class='val'>3.0.0</td></tr>";
     html += "</table>";
     html += "<a class='btn' href='/relay/0?turn=on'>ACCENDI</a> ";
     html += "<a class='btn' href='/relay/0?turn=off'>SPEGNI</a><br><br>";
