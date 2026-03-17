@@ -340,6 +340,11 @@ void setup() {
   // ── HLW8012 ───────────────────────────────────────────────────
   hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
   hlw8012.setResistors(0.001, 2480000, 1000);
+
+  // Valori REALI misurati del tuo carico di test (lato AC):
+  // - Tensione rete: misura con multimetro sulla presa → es. 228V
+  // - Potenza:       quella dell'alimentatore lato AC  → ~9W (con perdite)
+  // - Corrente:      P/V → 9/228 = 0.039A
   hlw8012.expectedVoltage(228.0);       // ← metti il valore reale misurato
   hlw8012.expectedActivePower(9.0);     // ← potenza AC stimata (con perdite)
   hlw8012.expectedCurrent(0.039);       // ← corrente AC = P/V
