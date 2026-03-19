@@ -1,12 +1,6 @@
 /**
  * ============================================================
- *  SHELLY PLUG S GEN1 — Firmware Custom (mod. Giorgio)
- * ============================================================
- *  Modifiche rispetto all'originale:
- *    - Rimossa funzione checkSafety() e soglie di sicurezza
- *    - Aggiunti topic MQTT per corrente, potenza e tensione
- *    - Pubblicazione energia ogni SEND_INTERVAL_MS (60s)
- *    - Aggiunti topic separati per ogni grandezza
+ *  SHELLY PLUG S GEN1 — Firmware Custom
  * ============================================================
  *  LIBRERIE RICHIESTE:
  *    - PubSubClient       (Nick O'Leary)
