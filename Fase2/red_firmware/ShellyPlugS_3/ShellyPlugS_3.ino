@@ -81,6 +81,249 @@ char TOPIC_VOLTAGE[64];
 char TOPIC_TEMPERATURE[64];
 char TOPIC_ONLINE[64];
 
+
+// /* ================== Web UI HTML ================== */
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shelly Plug S - Firmware UI</title>
+    <style>
+        :root {
+            --bg-color: #2c3136; --panel-bg: #212529; --header-bg: #1c1f22;
+            --shelly-blue: #00adef; --text-main: #ffffff; --text-muted: #a0a0a0;
+            --border-color: #343a40; --input-bg: #16191c; --danger: #dc3545; --success: #28a745;
+        }
+        body {
+            background-color: var(--bg-color); color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; user-select: none;
+        }
+        .top-bar { width: 100%; background: var(--header-bg); padding: 10px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #111; position: sticky; top: 0; z-index: 100; }
+        .logo { color: var(--shelly-blue); font-weight: bold; font-size: 18px; letter-spacing: 1px; }
+        .logo span { color: #fff; font-weight: 300; }
+        .top-icons { display: flex; gap: 15px; font-size: 14px; }
+        .container { width: 100%; max-width: 600px; padding: 15px; box-sizing: border-box; }
+        .panel-switch { background: var(--panel-bg); border-radius: 4px; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .power-val { font-size: 26px; font-weight: bold; width: 100px; text-align: right; }
+        .power-val span { font-size: 14px; color: var(--text-muted); font-weight: normal; }
+        .top-icons span { display: flex; align-items: center; }
+        .btn-pwr { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #555; display: flex; align-items: center; justify-content: center; color: #555; cursor: pointer; font-size: 20px; transition: 0.3s; background: transparent; }
+        .btn-pwr.on { border-color: var(--shelly-blue); color: var(--shelly-blue); box-shadow: 0 0 10px rgba(0, 173, 239, 0.2); }
+        .nav-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--border-color); border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; margin-bottom: 15px; }
+        .nav-item { background: var(--panel-bg); padding: 12px 2px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
+        .nav-item svg { width: 22px; height: 22px; margin-bottom: 8px; color: #ffffff; opacity: 0.6; transition: opacity 0.2s; }
+        .nav-item span { font-size: 9px; color: var(--text-muted); text-transform: uppercase; text-align: center; line-height: 1.2; }
+        .nav-item:hover { background: #2a2e33; }
+        .nav-item.active { border-bottom: 3px solid var(--shelly-blue); background: #2a2e33; }
+        .nav-item.active svg, .nav-item:hover svg { opacity: 1; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .list-header { background: #343a40; color: #fff; padding: 12px; font-size: 12px; text-align: center; text-transform: uppercase; border-radius: 4px 4px 0 0; font-weight: bold; }
+        .list-container { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 0 0 4px 4px; }
+        .menu-row { border-bottom: 1px solid var(--border-color); }
+        .menu-row:last-child { border-bottom: none; }
+        .list-item { padding: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; cursor: pointer; transition: background 0.2s; text-transform: uppercase; }
+        .list-item:hover { background: #2a2e33; }
+        .list-item .left { display: flex; align-items: center; gap: 12px; }
+        .list-item .icon { color: var(--text-muted); font-size: 16px; width: 20px; text-align: center; }
+        .list-item .chevron { color: var(--text-muted); font-size: 10px; transition: transform 0.3s; }
+        .menu-row.open .chevron { transform: rotate(180deg); }
+        .submenu-content { display: none; background: #1a1d20; padding: 20px; border-top: 1px solid #111; font-size: 13px; color: #ccc; }
+        .menu-row.open .submenu-content { display: block; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #eee; font-size: 12px; }
+        input[type="text"], input[type="password"], select { width: 100%; padding: 10px; background: var(--input-bg); border: 1px solid #444; border-radius: 4px; color: #fff; box-sizing: border-box; font-size: 14px; }
+        input[type="checkbox"] { transform: scale(1.2); margin-right: 10px; }
+        .btn-save { background: var(--shelly-blue); color: white; border: none; padding: 12px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 12px; width: 100%; transition: 0.2s; }
+        .btn-save:hover { background: #0096d1; }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: #c82333; }
+        .footer { margin-top: 30px; text-align: center; font-size: 11px; color: #6c757d; padding-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="logo">Shelly <span>PLUG S</span></div>
+        <div class="top-icons">
+            <span style="color: #ffffff;" title="WiFi OK">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="9" x2="6" y2="14"></line><line x1="18" y1="5" x2="18" y2="14"></line><circle cx="12" cy="18" r="1"></circle></svg>
+            </span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);" id="clock">Time: --:--</div>
+    </div>
+
+    <div class="container">
+        <div class="panel-switch">
+            <div style="font-size: 14px; font-weight: bold; color: #ccc;">Switch</div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff" stroke="#ffffff" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                <div class="power-val" id="power-display">0.0 <span>W</span></div>
+            </div>
+            <button class="btn-pwr" id="btn-relay" onclick="toggleRelay()">⏻</button>
+        </div>
+
+        <div class="nav-grid">
+            <div class="nav-item" onclick="switchTab('timer', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span>Timer</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('schedule', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>Weekly<br>schedule</span>
+            </div>
+            <div class="nav-item active" onclick="switchTab('internet', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <span>Internet &<br>Security</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('safety', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span>Safety</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('actions', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><polyline points="11 8 15 12 11 16"></polyline><line x1="8" y1="12" x2="8.01" y2="12"></line></svg>
+                <span>Actions</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('settings', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <span>Settings</span>
+            </div>
+        </div>
+
+        <div id="tab-internet" class="tab-content active">
+            <div class="list-header">Internet & Security</div>
+            <div class="list-container" style="padding: 20px; text-align: center; color: var(--text-muted);">
+                Funzioni di rete configurabili tramite WiFiManager all'avvio o tramite IP.
+            </div>
+        </div>
+
+        <div id="tab-settings" class="tab-content">
+            <div class="list-header">Settings</div>
+            <div class="list-container">
+                <div class="menu-row">
+                    <div class="list-item" onclick="toggleAccordion(this)">
+                        <div class="left"><span class="icon">⬆️</span> FIRMWARE UPDATE</div>
+                        <div class="chevron">▼</div>
+                    </div>
+                    <div class="submenu-content">
+                        <p>Current version: Mod. Giorgio v3.0.0</p>
+                        <button class="btn-save" onclick="window.location.href='/update'">Vai a OTA Update</button>
+                    </div>
+                </div>
+                <div class="menu-row">
+                    <div class="list-item" onclick="toggleAccordion(this)">
+                        <div class="left"><span class="icon">🔄</span> SYSTEM REBOOT / RESET</div>
+                        <div class="chevron">▼</div>
+                    </div>
+                    <div class="submenu-content">
+                        <button class="btn-save btn-danger" onclick="window.location.href='/reboot'">Reboot Device</button>
+                        <br><br>
+                        <button class="btn-save btn-danger" style="background:#8b0000;" onclick="if(confirm('Resettare il WiFi e riavviare?')){window.location.href='/reset';}">Reset WiFi & Reboot</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-timer" class="tab-content">
+            <div class="list-header">Timer</div>
+            <div class="list-container" style="padding: 20px; text-align: center; color: var(--text-muted);">
+                Funzione non ancora implementata.
+            </div>
+        </div>
+        <div id="tab-schedule" class="tab-content">
+            <div class="list-header">Weekly Schedule</div>
+            <div class="list-container" style="padding: 20px; text-align: center; color: var(--text-muted);">
+                Funzione non ancora implementata.
+            </div>
+        </div>
+        <div id="tab-safety" class="tab-content">
+            <div class="list-header">Safety</div>
+            <div class="list-container" style="padding: 20px; text-align: center; color: var(--text-muted);">
+                Protezione disabilitata da Firmware.
+            </div>
+        </div>
+        <div id="tab-actions" class="tab-content">
+            <div class="list-header">Actions (Webhooks)</div>
+            <div class="list-container" style="padding: 20px; text-align: center; color: var(--text-muted);">
+                Funzione non ancora implementata.
+            </div>
+        </div>
+
+        <div class="footer">
+            Modded by Giorgio<br>
+            <span style="color: var(--shelly-blue)">ESP8266 Custom Firmware</span>
+        </div>
+    </div>
+
+    <script>
+        // Orologio
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('clock').innerText = 'Time: ' + timeString;
+        }
+        setInterval(updateTime, 1000); updateTime();
+
+        // Navigazione Tab
+        function switchTab(tabId, clickedElement) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            clickedElement.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        // Accordion
+        function toggleAccordion(element) {
+            const row = element.parentElement;
+            const isOpen = row.classList.contains('open');
+            const container = row.parentElement;
+            container.querySelectorAll('.menu-row').forEach(r => r.classList.remove('open'));
+            if (!isOpen) row.classList.add('open');
+        }
+
+        // COMUNICAZIONE REALE CON L'ESP8266
+        function updateUI(ison, power) {
+            const btn = document.getElementById('btn-relay');
+            if (ison) {
+                btn.classList.add('on');
+            } else {
+                btn.classList.remove('on');
+            }
+            document.getElementById('power-display').innerHTML = `${parseFloat(power).toFixed(1)} <span>W</span>`;
+        }
+
+        function toggleRelay() {
+            fetch('/relay/0?turn=toggle')
+                .then(response => response.json())
+                .then(data => {
+                    // Update the visual status immediately after toggle
+                    updateUI(data.ison, data.power || 0.0);
+                });
+        }
+
+        function fetchStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateUI(data.ison, data.power);
+                })
+                .catch(err => console.log("Errore connessione:", err));
+        }
+
+        // Aggiorna lo stato reale ogni 2 secondi
+        setInterval(fetchStatus, 2000);
+        fetchStatus();
+    </script>
+</body>
+</html>
+)rawliteral";
+
+
 /* ================== TEMPERATURA NTC ================== */
 double getRealTemperature() {
   int rawADC = analogRead(ANALOG_PIN);
@@ -365,33 +608,7 @@ void setup() {
 
   // ── Web Server ────────────────────────────────────────────────
   server.on("/", []() {
-    String html = "<html><head>";
-    html += "<meta charset='utf-8'>";
-    html += "<style>";
-    html += "body{font-family:sans-serif;max-width:400px;margin:40px auto;padding:0 20px;}";
-    html += "h1{font-size:1.4em;} .btn{display:inline-block;padding:8px 16px;";
-    html += "background:#333;color:#fff;text-decoration:none;border-radius:4px;margin:4px;}";
-    html += ".btn-red{background:#c0392b;} .val{font-weight:bold;color:#2980b9;}";
-    html += "table{width:100%;border-collapse:collapse;margin:16px 0;}";
-    html += "td{padding:8px;border-bottom:1px solid #eee;}";
-    html += "</style></head><body>";
-    html += "<h1>Shelly Plug S</h1>";
-    html += "<table>";
-    html += "<tr><td>Relay</td><td class='val'>"    + String(digitalRead(RELAY_PIN) ? "ON" : "OFF") + "</td></tr>";
-    html += "<tr><td>Tensione</td><td class='val'>" + String(hlw8012.getVoltage())      + " V</td></tr>";
-    html += "<tr><td>Corrente</td><td class='val'>" + String(hlw8012.getCurrent())      + " A</td></tr>";
-    html += "<tr><td>Potenza</td><td class='val'>"  + String(hlw8012.getActivePower())  + " W</td></tr>";
-    html += "<tr><td>Temperatura</td><td class='val'>" + String(getRealTemperature())   + " °C</td></tr>";
-    html += "<tr><td>Uptime</td><td class='val'>"   + String(millis()/1000)             + " s</td></tr>";
-    html += "<tr><td>Versione FW</td><td class='val'>3.0.0</td></tr>";
-    html += "</table>";
-    html += "<a class='btn' href='/relay/0?turn=on'>ACCENDI</a> ";
-    html += "<a class='btn' href='/relay/0?turn=off'>SPEGNI</a><br><br>";
-    html += "<a class='btn' href='/update'>⬆ Aggiorna Firmware</a><br><br>";
-    html += "<a class='btn btn-red' href='/reboot'>Riavvia</a> ";
-    html += "<a class='btn btn-red' href='/reset'>Reset WiFi</a>";
-    html += "</body></html>";
-    server.send(200, "text/html", html);
+    server.send_P(200, "text/html", index_html);
   });
 
   server.on("/relay/0", []() {
