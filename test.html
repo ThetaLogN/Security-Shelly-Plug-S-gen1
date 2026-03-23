@@ -418,7 +418,6 @@
 
         // Simulazione Relè
         let isRelayOn = false;
-        let basePower = 0;
 
         function toggleRelay() {
             const btn = document.getElementById('btn-relay');
@@ -426,7 +425,6 @@
             
             if (isRelayOn) {
                 btn.classList.add('on');
-                basePower = 45.0 + (Math.random() * 10);
             } else {
                 btn.classList.remove('on');
                 basePower = 0;

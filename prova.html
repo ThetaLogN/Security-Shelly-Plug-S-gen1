@@ -75,7 +75,6 @@
     </div>
 
     <div class="container">
-        <!-- SWITCH PANEL -->
         <div class="panel-switch">
             <div style="font-size:14px;font-weight:bold;color:#ccc;">Switch</div>
             <div style="display:flex;align-items:center;gap:10px;">
@@ -86,8 +85,6 @@
             </div>
             <button class="btn-pwr" id="btn-relay" onclick="toggleRelay()">⏻</button>
         </div>
-
-        <!-- NAV -->
         <div class="nav-grid">
             <div class="nav-item" onclick="switchTab('timer',this)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -114,16 +111,12 @@
                 <span>Settings</span>
             </div>
         </div>
-
-        <!-- TAB: INTERNET & SECURITY -->
         <div id="tab-internet" class="tab-content active">
             <div class="list-header">Internet & Security</div>
             <div class="list-container">
-
-                <!-- WiFi Client -->
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
-                        <div class="left"><span class="icon">📶</span> WIFI MODE - CLIENT</div>
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span> WIFI MODE - CLIENT</div>
                         <div class="chevron">▼</div>
                     </div>
                     <div class="submenu-content">
@@ -138,30 +131,9 @@
                         <button class="btn-save" onclick="saveWifi()">Save & Reconnect</button>
                     </div>
                 </div>
-
-                <!-- UDP Server -->
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
-                        <div class="left"><span class="icon">📡</span> ADVANCE - UDP SERVER</div>
-                        <div class="chevron">▼</div>
-                    </div>
-                    <div class="submenu-content">
-                        <div class="form-group">
-                            <label>Server IP Address</label>
-                            <input type="text" id="udp-ip" placeholder="Es. 192.168.1.100">
-                        </div>
-                        <div class="form-group">
-                            <label>Server Port</label>
-                            <input type="text" id="udp-port" placeholder="Es. 9999">
-                        </div>
-                        <button class="btn-save" onclick="saveUDP()">Save</button>
-                    </div>
-                </div>
-
-                <!-- MQTT -->
-                <div class="menu-row">
-                    <div class="list-item" onclick="toggleAccordion(this)">
-                        <div class="left"><span class="icon">🔗</span> MQTT</div>
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span>WIFI CLIENT AP ROAMING</div>
                         <div class="chevron">▼</div>
                     </div>
                     <div class="submenu-content">
@@ -181,31 +153,76 @@
                     </div>
                 </div>
 
-                <!-- Device Info -->
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
-                        <div class="left"><span class="icon">ℹ️</span> DEVICE INFO</div>
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        </span> WIFI MODE - ACCESS POINT </div>
                         <div class="chevron">▼</div>
                     </div>
-                    <div class="submenu-content" id="device-info-panel">
-                        <div class="info-row"><span class="key">IP Address</span><span class="val" id="info-ip">--</span></div>
-                        <div class="info-row"><span class="key">Tensione</span><span class="val" id="info-v">-- V</span></div>
-                        <div class="info-row"><span class="key">Corrente</span><span class="val" id="info-i">-- A</span></div>
-                        <div class="info-row"><span class="key">Potenza</span><span class="val" id="info-p">-- W</span></div>
-                        <div class="info-row"><span class="key">Temperatura</span><span class="val" id="info-t">-- °C</span></div>
-                        <div class="info-row"><span class="key">Uptime</span><span class="val" id="info-uptime">--</span></div>
+                    <div class="submenu-content">
+                        <label><input type="checkbox" checked> WIFI MODE - ACCESS POINT</label><br><br>
+                        <button class="btn-save">Save</button>
+                    </div>
+                </div>
+
+                <div class="menu-row">
+                    <div class="list-item" onclick="toggleAccordion(this)">
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        </span> RESTRICT LOGIN </div>
+                        <div class="chevron">▼</div>
+                    </div>
+                    <div class="submenu-content">
+                        <label><input type="checkbox" checked> RESTRICT LOGIN </label><br><br>
+                        <button class="btn-save">Save</button>
+                    </div>
+                </div>
+
+                <div class="menu-row">
+                    <div class="list-item" onclick="toggleAccordion(this)">
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        </span> SNTP SERVER </div>
+                        <div class="chevron">▼</div>
+                    </div>
+                    <div class="submenu-content">
+                        <label><input type="checkbox" checked> SNTP SERVER </label><br><br>
+                        <button class="btn-save">Save</button>
+                    </div>
+                </div>
+                 <div class="menu-row">
+                    <div class="list-item" onclick="toggleAccordion(this)">
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span> ADVANCE - DEVELOPER SETTING</div>
+                        <div class="chevron">▼</div>
+                    </div>
+                    <div class="submenu-content">
+                        <div class="form-group">
+                            <label>Server IP Address</label>
+                            <input type="text" id="udp-ip" placeholder="Es. 192.168.1.100">
+                        </div>
+                        <div class="form-group">
+                            <label>Server Port</label>
+                            <input type="text" id="udp-port" placeholder="Es. 9999">
+                        </div>
+                        <button class="btn-save" onclick="saveUDP()">Save</button>
+                    </div>
+                </div>
+
+                <div class="menu-row">
+                    <div class="list-item" onclick="toggleAccordion(this)">
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        </span> CLOUD </div>
+                        <div class="chevron">▼</div>
+                    </div>
+                    <div class="submenu-content">
+                        <label><input type="checkbox" checked> CLOUD </label><br><br>
+                        <button class="btn-save">Save</button>
                     </div>
                 </div>
 
             </div>
         </div>
-
-        <!-- TAB: SETTINGS -->
         <div id="tab-settings" class="tab-content">
             <div class="list-header">Settings</div>
             <div class="list-container">
-
-                <!-- Power On Default -->
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
                         <div class="left"><span class="icon">⚡</span> POWER ON DEFAULT MODE</div>
@@ -219,21 +236,17 @@
                         <button class="btn-save" onclick="showToast('Impostazione salvata (riavvio necessario)')">Save</button>
                     </div>
                 </div>
-
-                <!-- Firmware Update OTA -->
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
                         <div class="left"><span class="icon">⬆️</span> FIRMWARE UPDATE (OTA)</div>
                         <div class="chevron">▼</div>
                     </div>
                     <div class="submenu-content">
-                        <p>Versione attuale: <strong>Mod. Giorgio v3.0.0</strong></p>
-                        <p style="color:var(--text-muted);font-size:11px;">Carica un file .bin compilato da Arduino IDE</p>
+                        <p>Versione attuale: <strong>v3.0.0</strong></p>
+                        <p style="color:var(--text-muted);font-size:11px;">Carica un file .bin </p>
                         <button class="btn-save" onclick="window.location.href='/update'">⬆ Apri OTA Update</button>
                     </div>
                 </div>
-
-                <!-- Reboot / Reset -->
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
                         <div class="left"><span class="icon">🔄</span> REBOOT / RESET WIFI</div>
@@ -248,32 +261,24 @@
 
             </div>
         </div>
-
-        <!-- TAB: TIMER -->
         <div id="tab-timer" class="tab-content">
             <div class="list-header">Timer</div>
             <div class="list-container" style="padding:20px;text-align:center;color:var(--text-muted);">
                 Funzione non ancora implementata.
             </div>
         </div>
-
-        <!-- TAB: SCHEDULE -->
         <div id="tab-schedule" class="tab-content">
             <div class="list-header">Weekly Schedule</div>
             <div class="list-container" style="padding:20px;text-align:center;color:var(--text-muted);">
                 Funzione non ancora implementata.
             </div>
         </div>
-
-        <!-- TAB: SAFETY -->
         <div id="tab-safety" class="tab-content">
             <div class="list-header">Safety</div>
             <div class="list-container" style="padding:20px;text-align:center;color:var(--text-muted);">
                 Protezione disabilitata dal firmware custom.
             </div>
         </div>
-
-        <!-- TAB: ACTIONS -->
         <div id="tab-actions" class="tab-content">
             <div class="list-header">Actions (Webhooks)</div>
             <div class="list-container" style="padding:20px;text-align:center;color:var(--text-muted);">
@@ -282,20 +287,17 @@
         </div>
 
         <div class="footer">
-            Modded by Giorgio<br>
-            <span style="color:var(--shelly-blue)">ESP8266 Custom Firmware v3.0.0</span>
+            <p>Allterco Robotics Ltd.</p>
+            <span style="color:var(--shelly-blue)">support@shelly.cloud</span> 1 <span style="color:var(--shelly-blue)">https://shelly.cloud</span>
         </div>
     </div>
 
     <script>
-        // ── Orologio ─────────────────────────────────────────────
         function updateTime() {
             const now = new Date();
             document.getElementById('clock').innerText = 'Time: ' + now.toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'});
         }
         setInterval(updateTime, 1000); updateTime();
-
-        // ── Toast notification ────────────────────────────────────
         function showToast(msg, color) {
             const t = document.getElementById('toast');
             t.innerText = msg;
@@ -303,24 +305,18 @@
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 3000);
         }
-
-        // ── Tab navigation ────────────────────────────────────────
         function switchTab(tabId, el) {
             document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
             el.classList.add('active');
             document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
         }
-
-        // ── Accordion ─────────────────────────────────────────────
         function toggleAccordion(el) {
             const row = el.parentElement;
             const isOpen = row.classList.contains('open');
             row.parentElement.querySelectorAll('.menu-row').forEach(r => r.classList.remove('open'));
             if (!isOpen) row.classList.add('open');
         }
-
-        // ── Relay toggle (reale) ──────────────────────────────────
         function toggleRelay() {
             fetch('/relay/0?turn=toggle')
                 .then(r => r.json())
@@ -334,7 +330,6 @@
             else      btn.classList.remove('on');
         }
 
-        // ── Fetch status ogni 3s ──────────────────────────────────
         function fetchStatus() {
             fetch('/status')
                 .then(r => r.json())
@@ -357,7 +352,6 @@
             return `${h}h ${m}m ${sec}s`;
         }
 
-        // ── Carica config esistente nei form ─────────────────────
         function loadConfig() {
             fetch('/api/config')
                 .then(r => r.json())
@@ -372,7 +366,6 @@
         }
         loadConfig();
 
-        // ── Salva WiFi ────────────────────────────────────────────
         function saveWifi() {
             const ssid = document.getElementById('wifi-ssid').value.trim();
             const pass = document.getElementById('wifi-pass').value;
@@ -386,8 +379,6 @@
             .then(d => showToast(d.msg || 'Salvato! Riconnessione...', '#28a745'))
             .catch(() => showToast('Errore', '#dc3545'));
         }
-
-        // ── Salva UDP ─────────────────────────────────────────────
         function saveUDP() {
             const ip   = document.getElementById('udp-ip').value.trim();
             const port = document.getElementById('udp-port').value.trim();
@@ -401,8 +392,6 @@
             .then(d => showToast(d.msg || 'UDP aggiornato!', '#28a745'))
             .catch(() => showToast('Errore', '#dc3545'));
         }
-
-        // ── Salva MQTT ────────────────────────────────────────────
         function saveMQTT() {
             const server = document.getElementById('mqtt-server').value.trim();
             const port   = document.getElementById('mqtt-port').value.trim();
@@ -417,14 +406,10 @@
             .then(d => showToast(d.msg || 'MQTT aggiornato! Riavvio consigliato.', '#28a745'))
             .catch(() => showToast('Errore', '#dc3545'));
         }
-
-        // ── Reboot ────────────────────────────────────────────────
         function rebootDevice() {
             if (!confirm('Riavviare il dispositivo?')) return;
             fetch('/reboot').then(() => showToast('Riavvio in corso...', '#f0ad4e'));
         }
-
-        // ── Reset WiFi ────────────────────────────────────────────
         function resetWifi() {
             if (!confirm('Reset WiFi e riavvio? Dovrai riconfigurare la rete.')) return;
             fetch('/reset').then(() => showToast('Reset WiFi in corso...', '#dc3545'));
