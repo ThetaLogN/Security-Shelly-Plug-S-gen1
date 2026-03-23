@@ -682,38 +682,6 @@ void setup() {
 
   loadConfig();
 
-  // WiFiManager
-  WiFiManager wifiManager;
-  wifiManager.setSaveConfigCallback(saveConfigCallback);
-  WiFiManagerParameter p_mqtt_server("server",  "MQTT Server",    mqtt_server,  40);
-  WiFiManagerParameter p_mqtt_port  ("port",    "MQTT Port",      mqtt_port,    6);
-  WiFiManagerParameter p_device_id  ("devid",   "Device ID",      device_id,    32);
-  WiFiManagerParameter p_udp_ip     ("udpip",   "UDP Server IP",  udp_ip_cfg,   16);
-  WiFiManagerParameter p_udp_port   ("udpport", "UDP Server Port",udp_port_cfg, 6);
-  wifiManager.addParameter(&p_mqtt_server);
-  wifiManager.addParameter(&p_mqtt_port);
-  wifiManager.addParameter(&p_device_id);
-  wifiManager.addParameter(&p_udp_ip);
-  wifiManager.addParameter(&p_udp_port);
-
-  if (!wifiManager.autoConnect("Shelly-Emulator-AP")) {
-    Serial.println("[WiFi] Fallito, riavvio...");
-    delay(3000); ESP.restart();
-  }
-
-  if (shouldSaveConfig) {
-    strcpy(mqtt_server,  p_mqtt_server.getValue());
-    strcpy(mqtt_port,    p_mqtt_port.getValue());
-    strcpy(device_id,    p_device_id.getValue());
-    strcpy(udp_ip_cfg,   p_udp_ip.getValue());
-    strcpy(udp_port_cfg, p_udp_port.getValue());
-    serverIP.fromString(udp_ip_cfg);
-    serverPort = atoi(udp_port_cfg);
-    saveConfig();
-  }
-
-  Serial.printf("[WiFi] IP: %s\n", WiFi.localIP().toString().c_str());
-
   // Build topic MQTT
   snprintf(TOPIC_RELAY_STATE, sizeof(TOPIC_RELAY_STATE), "%s/relay/0",        device_id);
   snprintf(TOPIC_RELAY_CMD,   sizeof(TOPIC_RELAY_CMD),   "%s/relay/0/command", device_id);
@@ -733,16 +701,6 @@ void setup() {
   hlw8012.expectedCurrent(0.04);
   attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(CF_PIN),  hlw8012_cf_interrupt,  CHANGE);
-
-  // MQTT
-  mqtt.setServer(mqtt_server, atoi(mqtt_port));
-  mqtt.setCallback(mqttCallback);
-  mqtt.setBufferSize(512);
-
-  // UDP
-  udp.begin(serverPort);
-
-  // ── Web Server routes ─────────────────────────────────────────
 
   // Pagina principale
   server.on("/", []() {
