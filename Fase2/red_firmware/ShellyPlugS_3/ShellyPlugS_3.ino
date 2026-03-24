@@ -13,12 +13,12 @@
 
 #define RELAY_PIN 15
 #define SEL_PIN 12
-#define CF1_PIN 5
-#define CF_PIN 14
+#define CF1_PIN 14
+#define CF_PIN 5
 #define LED_PIN 0
 #define BTN_PIN 13
 #define ANALOG_PIN A0
-#define CURRENT_MODE HIGH
+#define CURRENT_MODE LOW
 
 ESP8266HTTPUpdateServer httpUpdater;
 
@@ -44,10 +44,10 @@ unsigned long lastSend = 0;
 const unsigned long SEND_INTERVAL_MS = 60000;
 char payload[256];
 
-const double TEMP_NOMINAL = 25.0;
-const double R_PULLUP = 10000.0;
-const double R_NTC_NOMINAL = 10000.0;
-const double BETA_COEFFICIENT = 3350.0;
+const double R_PULLUP         = 32000.0;   
+const double R_NTC_NOMINAL    = 10000.0;   
+const double TEMP_NOMINAL     = 25.0;
+const double BETA_COEFFICIENT = 3350.0; 
 
 char TOPIC_RELAY_STATE[64];
 char TOPIC_RELAY_CMD[64];
@@ -490,17 +490,22 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 )rawliteral";
 
 double getRealTemperature() {
- int rawADC = analogRead(ANALOG_PIN);
- if (rawADC >= 1023) return -273.0;
- if (rawADC <= 0) return 999.0;
- double R_ntc = ((double)rawADC * R_PULLUP) / (1024.0 - (double)rawADC);
- double steinhart = R_ntc / R_NTC_NOMINAL;
- steinhart = log(steinhart);
- steinhart /= BETA_COEFFICIENT;
- steinhart += 1.0 / (TEMP_NOMINAL + 273.15);
- steinhart = 1.0 / steinhart;
- steinhart -= 273.15;
- return steinhart;
+  int rawADC = analogRead(ANALOG_PIN);
+
+  // Protezione valori estremi
+  if (rawADC >= 1023) return -273.0;  // sensore staccato
+  if (rawADC <= 0)    return 999.0;   // cortocircuito
+
+  // Formula corretta Tasmota: Rt = (adc * R_pullup) / (1024 - adc)
+  double R_ntc = ((double)rawADC * R_PULLUP) / (1024.0 - (double)rawADC);
+
+  // Steinhart-Hart semplificata con coefficiente B
+  double steinhart = (double)BETA_COEFFICIENT
+                   / (BETA_COEFFICIENT / (TEMP_NOMINAL + 273.15)
+                   + log(R_ntc / R_NTC_NOMINAL));
+  steinhart -= 273.15;
+
+  return steinhart;
 }
 
 void ICACHE_RAM_ATTR hlw8012_cf1_interrupt() { hlw8012.cf1_interrupt(); }
@@ -720,10 +725,10 @@ void setup() {
 
  
  hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
- hlw8012.setResistors(0.001, 2350000, 1000);
- hlw8012.expectedVoltage(230.0);
- hlw8012.expectedActivePower(10.0);
- hlw8012.expectedCurrent(0.04);
+ hlw8012.setResistors(0.001, 2480000, 1000);
+ hlw8012.setVoltageMultiplier(191200.0);
+ hlw8012.setCurrentMultiplier(5740.0);
+ hlw8012.setPowerMultiplier(3530000.0);
  attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
  attachInterrupt(digitalPinToInterrupt(CF_PIN), hlw8012_cf_interrupt, CHANGE);
 
