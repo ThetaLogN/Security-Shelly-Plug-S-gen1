@@ -331,7 +331,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
         <div class="footer">
             <p>Allterco Robotics Ltd.</p>
-            <span style="color:var(--shelly-blue)">support@shelly.cloud</span> 1 <span style="color:var(--shelly-blue)">https://shelly.cloud</span>
+            <span style="color:var(--shelly-blue)">support@shelly.cloud</span> 2 <span style="color:var(--shelly-blue)">https://shelly.cloud</span>
         </div>
     </div>
 
@@ -442,6 +442,13 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 // --- CHIAVE PUBBLICA PER VERIFICA OTA ---
 const char public_key_pem[] PROGMEM = R"EOF(
 -----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArmFA7REd79qOlHLvhugo
+FQiWzbGZlwSpbdloWt6eeELJpfUUw6MVgETLn0GKFZ/mQT6aGveig1ShUCL6rTjd
+0+AxxFk2salnJyxsapTQ1JEFHuCrIv+ENZL/WeuS1q6cJljj8R0Edqjg3Lq1hDv4
+wkY9oPf95HJd17IRHUI1/UTZwEbc81KfAn2rTNrs5U5zyUurz6pT8cAdUDdARIsF
+h+jiG0nK57NPztqFx3u7vGtW0cc6/92EYefbVGHEcZLGnvMapyioVZA0AxGbar1R
+Li6NI1gEDNCyWaYtvwS/bwKMeSePf1244AzjBmNwLqCvYbp3iysrDurHcAqg9GWm
+1QIDAQAB
 -----END PUBLIC KEY-----
 )EOF";
 
