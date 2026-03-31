@@ -1,4 +1,5 @@
 import sys
+import struct
 import os
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
@@ -41,6 +42,7 @@ def firma_firmware(file_bin):
     with open(file_output, "wb") as f:
         f.write(dati_firmware)
         f.write(firma)
+        f.write(struct.pack("<I", len(firma)))
 
     print(f"🚀 Successo! Firmware firmato salvato come: {file_output}")
 
