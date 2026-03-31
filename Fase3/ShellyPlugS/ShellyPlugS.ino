@@ -755,9 +755,11 @@ void setup() {
     if (upload.status == UPLOAD_FILE_START) {
       Serial.printf("[OTA] Inizio ricezione file: %s\n", upload.filename.c_str());
       
-      static BearSSL::PublicKey* otaPubKey = new BearSSL::PublicKey(public_key_pem);
-      static BearSSL::HashSHA256* otaHash = new BearSSL::HashSHA256();
-      Update.installSignature(otaHash, otaPubKey); 
+      static BearSSL::PublicKey otaPubKey(public_key_pem);
+      static BearSSL::HashSHA256 otaHash;
+      static BearSSL::SigningVerifier otaSign(&otaPubKey); 
+      
+      Update.installSignature(&otaHash, &otaSign);
       
       uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
       if (!Update.begin(maxSketchSpace)) { Update.printError(Serial); }
