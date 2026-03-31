@@ -1,5 +1,3 @@
-
-
 #include <FS.h>
 #include <LittleFS.h>
 #include <ESP8266WiFi.h>
@@ -18,7 +16,7 @@
 #define LED_PIN 0
 #define BTN_PIN 13
 #define ANALOG_PIN A0
-#define CURRENT_MODE HIGH
+#define CURRENT_MODE LOW
 
 ESP8266HTTPUpdateServer httpUpdater;
 
@@ -724,14 +722,14 @@ void setup() {
  snprintf(TOPIC_ONLINE, sizeof(TOPIC_ONLINE), "%s/online", device_id);
 
  
- hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, true, 1000000);
- hlw8012.setResistors(0.001, 2351000, 1000);
+ hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
+ hlw8012.setResistors(0.001, 2480000, 1000);
+ hlw8012.setVoltageMultiplier(191200.0);
+ hlw8012.setCurrentMultiplier(5740.0);
+ hlw8012.setPowerMultiplier(3530000.0);
 
- //hlw8012.expectedVoltage(230.0);
- //hlw8012.expectedCurrent(double current)
- //hlw8012.setVoltageMultiplier(1);
- //hlw8012.setCurrentMultiplier(1);
- //hlw8012.setPowerMultiplier(1);
+
+ 
  attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
  attachInterrupt(digitalPinToInterrupt(CF_PIN), hlw8012_cf_interrupt, CHANGE);
 
@@ -863,7 +861,7 @@ void loop() {
  server.handleClient();
  handleButton();
 
- if (apMode) return; // In AP mode serviamo solo la pagina web
+ if (apMode) return; 
 
  if (!mqtt.connected()) {
    static unsigned long lastReconn = 0;
