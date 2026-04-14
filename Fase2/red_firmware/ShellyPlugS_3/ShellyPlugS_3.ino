@@ -31,6 +31,7 @@ char udp_port_cfg[6] = "9999";
 char wifi_ssid[32]  = "";
 char wifi_pass[64]  = "";
 bool apMode = false;
+bool calib = false;
 
 WiFiClient wifiClient;
 WiFiUDP udp;
@@ -42,7 +43,7 @@ unsigned long lastSend = 0;
 const unsigned long SEND_INTERVAL_MS = 60000;
 char payload[256];
 
-const double R_PULLUP         = 32000.0;   
+const double R_PULLUP         = 9480.0;   
 const double R_NTC_NOMINAL    = 10000.0;   
 const double TEMP_NOMINAL     = 25.0;
 const double BETA_COEFFICIENT = 3350.0; 
@@ -686,6 +687,28 @@ void sendTelemetryUDP() {
  else Serial.println("[UDP] Errore invio");
 }
 
+
+void sendCalibUDP() {
+ float power = hlw8012.getPowerMultiplier();
+ float current = hlw8012.getCurrentMultiplier();
+ float voltage = hlw8012.getVoltageMultiplier();
+ 
+ StaticJsonDocument<256> doc;
+ doc["device_id"] = device_id;
+ doc["voltage"] = voltage;
+ doc["current"] = current;
+ doc["power"] = power;
+ doc["relay"] = (bool)digitalRead(RELAY_PIN);
+ doc["uptime"] = millis() / 1000;
+ char jsonBuf[256];
+ size_t len = serializeJson(doc, jsonBuf);
+
+ udp.beginPacket(serverIP, serverPort);
+ udp.write((uint8_t*)jsonBuf, len);
+ if (udp.endPacket()) Serial.printf("[UDP] Inviato a %s:%d\n", serverIP.toString().c_str(), serverPort);
+ else Serial.println("[UDP] Errore invio");
+}
+
 void handleButton() {
  static unsigned long lastPress = 0;
  if (digitalRead(BTN_PIN) == LOW && millis() - lastPress > 200) {
@@ -724,10 +747,12 @@ void setup() {
  
  hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
  hlw8012.setResistors(0.001, 2480000, 1000);
- hlw8012.setVoltageMultiplier(191200.0);
- hlw8012.setCurrentMultiplier(5740.0);
- hlw8012.setPowerMultiplier(3530000.0);
-
+ hlw8012.setVoltageMultiplier(431232.3);
+ hlw8012.setCurrentMultiplier(14484.49);
+ hlw8012.setPowerMultiplier(10915570.0);
+ //hlw8012.expectedVoltage(230.0);
+ //hlw8012.expectedActivePower(15.0);
+ //hlw8012.expectedCurrent(0.065);
 
  
  attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
@@ -874,4 +899,10 @@ void loop() {
    publishEnergy();
    sendTelemetryUDP();
  }
+
+ if (!calib && millis() > 50000){
+    calib = true;
+    sendCalibUDP();
+ }
+
 }
