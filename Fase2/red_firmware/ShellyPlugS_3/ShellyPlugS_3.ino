@@ -57,6 +57,8 @@ char TOPIC_VOLTAGE[64];
 char TOPIC_TEMPERATURE[64];
 char TOPIC_ONLINE[64];
 
+float last_correct_power = 0.0;
+
 const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -487,6 +489,20 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 </html>
 )rawliteral";
 
+float getValidPower(float voltage, float current, bool relay) {
+    float calculatedPower = voltage * current;
+
+    if (relay){
+        if (calculatedPower >= 0.1 && calculatedPower <= 25000.0) {
+        last_correct_power = calculatedPower;
+        }
+    }else{
+        last_correct_power = calculatedPower;
+    }
+
+    return last_correct_power;
+}
+
 double getRealTemperature() {
   int rawADC = analogRead(ANALOG_PIN);
 
@@ -598,16 +614,11 @@ void publishStatus(){
 
 void publishEnergy() {
  if (!mqtt.connected()) return;
- float power = hlw8012.getActivePower();
  float current = hlw8012.getCurrent();
  float voltage = hlw8012.getVoltage();
- float apparent = voltage * current;
- float pf = (apparent > 0.01f) ? (power / apparent) : 0.0f;
- if (pf > 1.0f) pf = 1.0f;
+ float power = getValidPower(voltage, current, (bool)digitalRead(RELAY_PIN));
  double temp = getRealTemperature();
 
- Serial.printf("[ENERGY] V:%.2fV I:%.3fA P:%.2fW PF:%.3f T:%.1f°C\n",
- voltage, current, power, pf, temp);
 
  char buf[32];
  snprintf(buf, sizeof(buf), "%.2f", voltage); mqtt.publish(TOPIC_VOLTAGE, buf);
@@ -619,8 +630,6 @@ void publishEnergy() {
  doc["voltage"] = round(voltage * 100) / 100.0;
  doc["current"] = round(current * 1000) / 1000.0;
  doc["power"] = round(power * 100) / 100.0;
- doc["apparent"] = round(apparent * 100) / 100.0;
- doc["pf"] = round(pf * 1000) / 1000.0;
  doc["temperature"] = round(temp * 10) / 10.0;
  doc["uptime"] = millis() / 1000;
  char jsonBuf[256];
@@ -659,12 +668,9 @@ void mqttReconnect() {
 }
 
 void sendTelemetryUDP() {
- float power = hlw8012.getActivePower();
  float current = hlw8012.getCurrent();
  float voltage = hlw8012.getVoltage();
- float apparent = voltage * current;
- float pf = (apparent > 0.01f) ? (power / apparent) : 0.0f;
- if (pf > 1.0f) pf = 1.0f;
+ float power = getValidPower(voltage, current, (bool)digitalRead(RELAY_PIN));
  double temp = getRealTemperature();
 
  StaticJsonDocument<256> doc;
@@ -672,31 +678,7 @@ void sendTelemetryUDP() {
  doc["voltage"] = round(voltage * 100) / 100.0;
  doc["current"] = round(current * 1000) / 1000.0;
  doc["power"] = round(power * 100) / 100.0;
- doc["apparent"] = round(apparent * 100) / 100.0;
- doc["pf"] = round(pf * 1000) / 1000.0;
  doc["temperature"] = round(temp * 10) / 10.0;
- doc["relay"] = (bool)digitalRead(RELAY_PIN);
- doc["uptime"] = millis() / 1000;
- char jsonBuf[256];
- size_t len = serializeJson(doc, jsonBuf);
-
- udp.beginPacket(serverIP, serverPort);
- udp.write((uint8_t*)jsonBuf, len);
- if (udp.endPacket()) Serial.printf("[UDP] Inviato a %s:%d\n", serverIP.toString().c_str(), serverPort);
- else Serial.println("[UDP] Errore invio");
-}
-
-
-void sendCalibUDP() {
- float power = hlw8012.getPowerMultiplier();
- float current = hlw8012.getCurrentMultiplier();
- float voltage = hlw8012.getVoltageMultiplier();
- 
- StaticJsonDocument<256> doc;
- doc["device_id"] = device_id;
- doc["voltage"] = voltage;
- doc["current"] = current;
- doc["power"] = power;
  doc["relay"] = (bool)digitalRead(RELAY_PIN);
  doc["uptime"] = millis() / 1000;
  char jsonBuf[256];
@@ -749,9 +731,6 @@ void setup() {
  hlw8012.setVoltageMultiplier(888.07);
  hlw8012.setCurrentMultiplier(431086.01);
  hlw8012.setPowerMultiplier(930.0);
- //hlw8012.expectedVoltage(230.0);
- //hlw8012.expectedActivePower(15.0);
- //hlw8012.expectedCurrent(0.065);
 
  
  attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
@@ -778,7 +757,7 @@ void setup() {
  doc["ison"] = (bool)digitalRead(RELAY_PIN);
  doc["voltage"] = hlw8012.getVoltage();
  doc["current"] = hlw8012.getCurrent();
- doc["power"] = hlw8012.getActivePower();
+ doc["power"] = getValidPower(hlw8012.getVoltage(), hlw8012.getCurrent(), (bool)digitalRead(RELAY_PIN));
  doc["temp"] = getRealTemperature();
  doc["uptime"] = millis() / 1000;
  doc["ip"] = WiFi.localIP().toString();
