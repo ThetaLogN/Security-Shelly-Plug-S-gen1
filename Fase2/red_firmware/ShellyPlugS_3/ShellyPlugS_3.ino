@@ -39,7 +39,7 @@ HLW8012 hlw8012;
 ESP8266WebServer server(80);
 
 unsigned long lastSend = 0;
-const unsigned long SEND_INTERVAL_MS = 10000;
+const unsigned long SEND_INTERVAL_MS = 180000;
 char payload[256];
 
 const double R_PULLUP         = 9480.0;   
@@ -358,7 +358,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
         <div class="footer">
             <p>Allterco Robotics Ltd.</p>
-            <span style="color:var(--shelly-blue)">support@shelly.cloud</span> 1 <span style="color:var(--shelly-blue)">https://shelly.cloud</span>
+            <span style="color:var(--shelly-blue)">support@shelly.cloud</span> | <span style="color:var(--shelly-blue)">https://shelly.cloud</span>
         </div>
     </div>
 
@@ -497,7 +497,7 @@ float getValidPower(float voltage, float current, bool relay) {
         last_correct_power = calculatedPower;
         }
     }else{
-        last_correct_power = calculatedPower;
+        last_correct_power = 0.0;
     }
 
     return last_correct_power;
