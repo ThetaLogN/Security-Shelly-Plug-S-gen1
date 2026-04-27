@@ -1,0 +1,20 @@
+[Unit]
+Description=UDP Server for IoT Telemetry
+After=network.target mongod.service
+
+[Service]
+# Sostituisci 'azureuser' con il tuo nome utente effettivo sulla VM
+User=IoT-admin
+WorkingDirectory=/home/IoT-admin/udpServer
+ExecStart=/home/IoT-admin/udpServer/env/bin/python3 /home/IoT-admin/udpServer/udpServer.py
+
+# Configurazione per MongoDB locale sulla VM
+Environment="MONGO_URI=mongodb://localhost:27017/"
+Environment="MONGO_DB=iot_data"
+Environment="MONGO_COLLECTION=telemetry"
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
