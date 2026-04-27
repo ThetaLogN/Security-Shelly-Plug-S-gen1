@@ -23,10 +23,10 @@ ESP8266HTTPUpdateServer httpUpdater;
 IPAddress serverIP(10, 200, 45, 150);
 uint16_t serverPort = 9999;
 
-char mqtt_server[40] = "192.168.1.100";
+char mqtt_server[40] = "74.161.73.178";
 char mqtt_port[6] = "1883";
 char device_id[32] = "shellyplug-s-emulator";
-char udp_ip_cfg[16] = "10.200.45.150";
+char udp_ip_cfg[16] = "74.161.73.178";
 char udp_port_cfg[6] = "9999";
 char wifi_ssid[32]  = "";
 char wifi_pass[64]  = "";
@@ -39,7 +39,7 @@ HLW8012 hlw8012;
 ESP8266WebServer server(80);
 
 unsigned long lastSend = 0;
-const unsigned long SEND_INTERVAL_MS = 180000;
+const unsigned long SEND_INTERVAL_MS = 60000;
 char payload[256];
 
 const double R_PULLUP         = 9480.0;   
@@ -506,14 +506,11 @@ float getValidPower(float voltage, float current, bool relay) {
 double getRealTemperature() {
   int rawADC = analogRead(ANALOG_PIN);
 
-  // Protezione valori estremi
   if (rawADC >= 1023) return -273.0;  // sensore staccato
   if (rawADC <= 0)    return 999.0;   // cortocircuito
 
-  // Formula corretta Tasmota: Rt = (adc * R_pullup) / (1024 - adc)
   double R_ntc = ((double)rawADC * R_PULLUP) / (1024.0 - (double)rawADC);
 
-  // Steinhart-Hart semplificata con coefficiente B
   double steinhart = (double)BETA_COEFFICIENT
                    / (BETA_COEFFICIENT / (TEMP_NOMINAL + 273.15)
                    + log(R_ntc / R_NTC_NOMINAL));
@@ -619,22 +616,24 @@ void publishEnergy() {
  float power = getValidPower(voltage, current, (bool)digitalRead(RELAY_PIN));
  double temp = getRealTemperature();
 
+ static unsigned long lastEnergyTime = 0;
+ static float cumulativeEnergy = 0.0;
+ unsigned long now = millis();
+ if (lastEnergyTime > 0) {
+   float hours = (now - lastEnergyTime) / 3600000.0;
+   cumulativeEnergy += power * hours;
+ }
+ lastEnergyTime = now;
 
  char buf[32];
- snprintf(buf, sizeof(buf), "%.2f", voltage); mqtt.publish(TOPIC_VOLTAGE, buf);
- snprintf(buf, sizeof(buf), "%.3f", current); mqtt.publish(TOPIC_CURRENT, buf);
- snprintf(buf, sizeof(buf), "%.2f", power); mqtt.publish(TOPIC_POWER, buf);
- snprintf(buf, sizeof(buf), "%.1f", temp); mqtt.publish(TOPIC_TEMPERATURE, buf);
+ snprintf(buf, sizeof(buf), "%.2f", power);
+ mqtt.publish(TOPIC_POWER, buf);
 
- StaticJsonDocument<256> doc;
- doc["voltage"] = round(voltage * 100) / 100.0;
- doc["current"] = round(current * 1000) / 1000.0;
- doc["power"] = round(power * 100) / 100.0;
- doc["temperature"] = round(temp * 10) / 10.0;
- doc["uptime"] = millis() / 1000;
- char jsonBuf[256];
- serializeJson(doc, jsonBuf);
- mqtt.publish(TOPIC_ENERGY, jsonBuf);
+ snprintf(buf, sizeof(buf), "%.3f", cumulativeEnergy);
+ mqtt.publish(TOPIC_ENERGY, buf);
+
+ snprintf(buf, sizeof(buf), "%.1f", temp);
+ mqtt.publish(TOPIC_TEMPERATURE, buf);
 }
 
 void mqttCallback(char* topic, byte* message, unsigned int length) {
@@ -668,26 +667,28 @@ void mqttReconnect() {
 }
 
 void sendTelemetryUDP() {
- float current = hlw8012.getCurrent();
- float voltage = hlw8012.getVoltage();
- float power = getValidPower(voltage, current, (bool)digitalRead(RELAY_PIN));
- double temp = getRealTemperature();
+ if ((bool)digitalRead(RELAY_PIN)){
+    float current = hlw8012.getCurrent();
+    float voltage = hlw8012.getVoltage();
+    float power = getValidPower(voltage, current, (bool)digitalRead(RELAY_PIN));
+    double temp = getRealTemperature();
 
- StaticJsonDocument<256> doc;
- doc["device_id"] = device_id;
- doc["voltage"] = round(voltage * 100) / 100.0;
- doc["current"] = round(current * 1000) / 1000.0;
- doc["power"] = round(power * 100) / 100.0;
- doc["temperature"] = round(temp * 10) / 10.0;
- doc["relay"] = (bool)digitalRead(RELAY_PIN);
- doc["uptime"] = millis() / 1000;
- char jsonBuf[256];
- size_t len = serializeJson(doc, jsonBuf);
+    StaticJsonDocument<256> doc;
+    doc["device_id"] = device_id;
+    doc["voltage"] = round(voltage * 100) / 100.0;
+    doc["current"] = round(current * 1000) / 1000.0;
+    doc["power"] = round(power * 100) / 100.0;
+    doc["temperature"] = round(temp * 10) / 10.0;
+    doc["relay"] = (bool)digitalRead(RELAY_PIN);
+    doc["uptime"] = millis() / 1000;
+    char jsonBuf[256];
+    size_t len = serializeJson(doc, jsonBuf);
 
- udp.beginPacket(serverIP, serverPort);
- udp.write((uint8_t*)jsonBuf, len);
- if (udp.endPacket()) Serial.printf("[UDP] Inviato a %s:%d\n", serverIP.toString().c_str(), serverPort);
- else Serial.println("[UDP] Errore invio");
+    udp.beginPacket(serverIP, serverPort);
+    udp.write((uint8_t*)jsonBuf, len);
+    if (udp.endPacket()) Serial.printf("[UDP] Inviato a %s:%d\n", serverIP.toString().c_str(), serverPort);
+    else Serial.println("[UDP] Errore invio");
+ }
 }
 
 void handleButton() {

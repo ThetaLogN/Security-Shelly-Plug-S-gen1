@@ -15,14 +15,14 @@
 #define LED_PIN 0
 #define BTN_PIN 13
 #define ANALOG_PIN A0
-#define CURRENT_MODE HIGH
+#define CURRENT_MODE LOW
 
 // --- CREDENZIALI PROTEZIONE OTA ---
 const char* ota_user = "admin";
-const char* ota_pass = "admin"; // Cambiala con una password più sicura!
+const char* ota_pass = "admin";
 
-char mqtt_server[40] = "192.168.1.100";
-char mqtt_port[6] = "1883";
+char mqtt_server[40] = "74.161.73.178";
+char mqtt_port[6] = "8883";
 char device_id[32] = "shellyplug-s-emulator";
 char wifi_ssid[32]  = "";
 char wifi_pass[64]  = "";
@@ -37,7 +37,7 @@ unsigned long lastSend = 0;
 const unsigned long SEND_INTERVAL_MS = 60000;
 char payload[256];
 
-const double R_PULLUP         = 32000.0;   
+const double R_PULLUP         = 9480.0;   
 const double R_NTC_NOMINAL    = 10000.0;   
 const double TEMP_NOMINAL     = 25.0;
 const double BETA_COEFFICIENT = 3350.0; 
@@ -51,6 +51,8 @@ char TOPIC_CURRENT[64];
 char TOPIC_VOLTAGE[64];
 char TOPIC_TEMPERATURE[64];
 char TOPIC_ONLINE[64];
+
+float last_correct_power = 0.0;
 
 const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 <html lang="it">
@@ -452,8 +454,23 @@ cwIDAQAB
 -----END PUBLIC KEY-----
 )EOF";
 
+float getValidPower(float voltage, float current, bool relay) {
+    float calculatedPower = voltage * current;
+
+    if (relay){
+        if (calculatedPower >= 0.1 && calculatedPower <= 25000.0) {
+        last_correct_power = calculatedPower;
+        }
+    }else{
+        last_correct_power = 0.0;
+    }
+
+    return last_correct_power;
+}
+
 double getRealTemperature() {
   int rawADC = analogRead(ANALOG_PIN);
+
   if (rawADC >= 1023) return -273.0;  
   if (rawADC <= 0)    return 999.0;   
 
@@ -549,34 +566,29 @@ void publishStatus(){
 
 void publishEnergy() {
  if (!mqtt.connected()) return;
- float power = hlw8012.getActivePower();
  float current = hlw8012.getCurrent();
  float voltage = hlw8012.getVoltage();
- float apparent = voltage * current;
- float pf = (apparent > 0.01f) ? (power / apparent) : 0.0f;
- if (pf > 1.0f) pf = 1.0f;
+ float power = getValidPower(voltage, current, (bool)digitalRead(RELAY_PIN));
  double temp = getRealTemperature();
 
- Serial.printf("[ENERGY] V:%.2fV I:%.3fA P:%.2fW PF:%.3f T:%.1f°C\n",
- voltage, current, power, pf, temp);
+ static unsigned long lastEnergyTime = 0;
+ static float cumulativeEnergy = 0.0;
+ unsigned long now = millis();
+ if (lastEnergyTime > 0) {
+   float hours = (now - lastEnergyTime) / 3600000.0;
+   cumulativeEnergy += power * hours;
+ }
+ lastEnergyTime = now;
 
  char buf[32];
- snprintf(buf, sizeof(buf), "%.2f", voltage); mqtt.publish(TOPIC_VOLTAGE, buf);
- snprintf(buf, sizeof(buf), "%.3f", current); mqtt.publish(TOPIC_CURRENT, buf);
- snprintf(buf, sizeof(buf), "%.2f", power); mqtt.publish(TOPIC_POWER, buf);
- snprintf(buf, sizeof(buf), "%.1f", temp); mqtt.publish(TOPIC_TEMPERATURE, buf);
+ snprintf(buf, sizeof(buf), "%.2f", power);
+ mqtt.publish(TOPIC_POWER, buf);
 
- StaticJsonDocument<256> doc;
- doc["voltage"] = round(voltage * 100) / 100.0;
- doc["current"] = round(current * 1000) / 1000.0;
- doc["power"] = round(power * 100) / 100.0;
- doc["apparent"] = round(apparent * 100) / 100.0;
- doc["pf"] = round(pf * 1000) / 1000.0;
- doc["temperature"] = round(temp * 10) / 10.0;
- doc["uptime"] = millis() / 1000;
- char jsonBuf[256];
- serializeJson(doc, jsonBuf);
- mqtt.publish(TOPIC_ENERGY, jsonBuf);
+ snprintf(buf, sizeof(buf), "%.3f", cumulativeEnergy);
+ mqtt.publish(TOPIC_ENERGY, buf);
+
+ snprintf(buf, sizeof(buf), "%.1f", temp);
+ mqtt.publish(TOPIC_TEMPERATURE, buf);
 }
 
 void mqttCallback(char* topic, byte* message, unsigned int length) {
@@ -642,8 +654,11 @@ void setup() {
  snprintf(TOPIC_TEMPERATURE, sizeof(TOPIC_TEMPERATURE), "%s/temperature", device_id);
  snprintf(TOPIC_ONLINE, sizeof(TOPIC_ONLINE), "%s/online", device_id);
 
- hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, true, 1000000);
- hlw8012.setResistors(0.001, 2351000, 1000);
+ hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
+ hlw8012.setResistors(0.001, 2480000, 1000);
+ hlw8012.setVoltageMultiplier(888.07);
+ hlw8012.setCurrentMultiplier(431086.01);
+ hlw8012.setPowerMultiplier(930.0);
 
  attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
  attachInterrupt(digitalPinToInterrupt(CF_PIN), hlw8012_cf_interrupt, CHANGE);
@@ -661,7 +676,7 @@ void setup() {
  doc["ison"] = (bool)digitalRead(RELAY_PIN);
  doc["voltage"] = hlw8012.getVoltage();
  doc["current"] = hlw8012.getCurrent();
- doc["power"] = hlw8012.getActivePower();
+ doc["power"] = getValidPower(hlw8012.getVoltage(), hlw8012.getCurrent(), (bool)digitalRead(RELAY_PIN));
  doc["temp"] = getRealTemperature();
  doc["uptime"] = millis() / 1000;
  doc["ip"] = WiFi.localIP().toString();
