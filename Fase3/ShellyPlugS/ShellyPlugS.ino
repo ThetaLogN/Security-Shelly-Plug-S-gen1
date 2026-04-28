@@ -7,6 +7,7 @@
 #include <ArduinoJson.h>
 #include <math.h>
 #include <bearssl/bearssl.h>
+#include <time.h>
 
 #define RELAY_PIN 15
 #define SEL_PIN 12
@@ -28,8 +29,8 @@ char wifi_ssid[32]  = "";
 char wifi_pass[64]  = "";
 bool apMode = false;
 
-WiFiClient wifiClient;
-PubSubClient mqtt(wifiClient);
+BearSSL::WiFiClientSecure wifiClientSecure;
+PubSubClient mqtt(wifiClientSecure);
 HLW8012 hlw8012;
 ESP8266WebServer server(80);
 
@@ -53,6 +54,27 @@ char TOPIC_TEMPERATURE[64];
 char TOPIC_ONLINE[64];
 
 float last_correct_power = 0.0;
+
+// --- SISTEMA LOG IN MEMORIA ---
+#define LOG_BUF_SIZE 2048
+char logRing[LOG_BUF_SIZE];
+int logPos = 0;
+bool logFull = false;
+
+void sysLog(const char* fmt, ...) {
+  char line[160];
+  va_list args;
+  va_start(args, fmt);
+  int len = vsnprintf(line, sizeof(line), fmt, args);
+  va_end(args);
+  if (len <= 0) return;
+  Serial.print(line);
+  for (int i = 0; i < len; i++) {
+    logRing[logPos] = line[i];
+    logPos = (logPos + 1) % LOG_BUF_SIZE;
+    if (logPos == 0) logFull = true;
+  }
+}
 
 const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 <html lang="it">
@@ -303,6 +325,17 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                         <button class="btn-save btn-danger" style="background:#8b0000;" onclick="resetWifi()">Reset WiFi & Reboot</button>
                     </div>
                 </div>
+                <div class="menu-row">
+                    <div class="list-item" onclick="toggleAccordion(this)">
+                        <div class="left"><span class="icon">📋</span> DEBUG LOG</div>
+                        <div class="chevron">▼</div>
+                    </div>
+                    <div class="submenu-content">
+                        <pre id="log-area" style="background:#0d1117;color:#58a6ff;padding:12px;border-radius:4px;font-size:11px;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;margin:0 0 10px 0;">Caricamento log...</pre>
+                        <button class="btn-save" onclick="fetchLogs()">🔄 Aggiorna Log</button>
+                        <label style="display:block;margin-top:10px;font-size:11px;"><input type="checkbox" id="auto-log" onchange="toggleAutoLog()"> Auto-refresh (3s)</label>
+                    </div>
+                </div>
 
             </div>
         </div>
@@ -436,6 +469,27 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             if (!confirm('Reset WiFi e riavvio? Dovrai riconfigurare la rete.')) return;
             fetch('/reset').then(() => showToast('Reset WiFi in corso...', '#dc3545'));
         }
+
+        let autoLogTimer = null;
+        function fetchLogs() {
+            fetch('/api/logs')
+                .then(r => r.text())
+                .then(t => {
+                    const el = document.getElementById('log-area');
+                    el.textContent = t || '(nessun log)';
+                    el.scrollTop = el.scrollHeight;
+                })
+                .catch(() => {});
+        }
+        function toggleAutoLog() {
+            if (document.getElementById('auto-log').checked) {
+                fetchLogs();
+                autoLogTimer = setInterval(fetchLogs, 3000);
+            } else {
+                clearInterval(autoLogTimer);
+                autoLogTimer = null;
+            }
+        }
     </script>
 </body>
 </html>
@@ -452,6 +506,46 @@ TzOn4/4arq+jPE6lykfaMuFW5vpsoA3RLOcWVV06w0eRUz/rJOkWYP6fO6yReL2K
 j24ybArUBN47EV+H3hwK0dV+772no71DGiPjyhOxU3GiyqapWhbEF0RCnwy/0s2O
 cwIDAQAB
 -----END PUBLIC KEY-----
+)EOF";
+
+// =============================================================
+// --- CERTIFICATI TLS PER MQTTS (mTLS) ---
+// =============================================================
+
+// CA certificate — verifica l'identità del broker MQTT
+static const char ca_cert[] PROGMEM = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIBejCCASGgAwIBAgIUFVXW5TCdG6ulZdWxgg3o9AUCNzMwCgYIKoZIzj0EAwIw
+EzERMA8GA1UEAwwITXlIb21lQ0EwHhcNMjYwNDI4MDkyNDQxWhcNMzYwNDI1MDky
+NDQxWjATMREwDwYDVQQDDAhNeUhvbWVDQTBZMBMGByqGSM49AgEGCCqGSM49AwEH
+A0IABMaaPxm+D1v5LevaPV252NTJpdlUfH/A+CxH9YTpLXlQcXkIpVyPkbWgo7U9
+H8CLDX9SuCqYOMm88jyNEhzvBXqjUzBRMB0GA1UdDgQWBBQct6/w23a8EJmtCQ3W
+h8DQd+XpnTAfBgNVHSMEGDAWgBQct6/w23a8EJmtCQ3Wh8DQd+XpnTAPBgNVHRMB
+Af8EBTADAQH/MAoGCCqGSM49BAMCA0cAMEQCIDbiZKisLi2bosiFQCHTTW4dpsvv
+vvrPrTa0Jln+rwVdAiA+tGvwUoV3r/8Okh8L6kVzFXhJd6aI2r1TTVTv56sNKQ==
+-----END CERTIFICATE-----
+)EOF";
+
+// Client certificate — identità del dispositivo verso il broker
+static const char client_cert[] PROGMEM = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIBIzCBygIUfmY/3EV36VCbqyhzbVg/zt30bdMwCgYIKoZIzj0EAwIwEzERMA8G
+A1UEAwwITXlIb21lQ0EwHhcNMjYwNDI4MDkyNjMyWhcNMzYwNDI1MDkyNjMyWjAW
+MRQwEgYDVQQDDAtTaGVsbHlQbHVnUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IA
+BNSWNtIAJLah0qqR6kTcegAUUpTqbFqK5w8u9+J4+0/HfzeysWVyXVhwr01WSfxb
+bqnQenwgen/8loKtJGc3DZUwCgYIKoZIzj0EAwIDSAAwRQIgeAVHnoCTRFDryVvf
+Kt2+I8X5zRjeBudNwky7MuwTwSQCIQD3uH9pvmOMS8wHQf6c4poL5L2u5WMGrJt9
+bbo5LtHKZQ==
+-----END CERTIFICATE-----
+)EOF";
+
+// Client private key — chiave privata del dispositivo
+static const char client_key[] PROGMEM = R"EOF(
+-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEICd3KuhBxkmSqkkE6rj2SzpcG/J88+Na6EzYLw/Cy74xoAoGCCqGSM49
+AwEHoUQDQgAE1JY20gAktqHSqpHqRNx6ABRSlOpsWornDy734nj7T8d/N7KxZXJd
+WHCvTVZJ/FtuqdB6fCB6f/yWgq0kZzcNlQ==
+-----END EC PRIVATE KEY-----
 )EOF";
 
 float getValidPower(float voltage, float current, bool relay) {
@@ -520,31 +614,70 @@ void saveConfig() {
  Serial.println("[CFG] Configurazione salvata");
 }
 
+// --- SINCRONIZZAZIONE NTP (necessaria per validazione certificati TLS) ---
+void syncNTP() {
+  sysLog("[NTP] Sincronizzazione orologio...");
+  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+
+  time_t now = time(nullptr);
+  unsigned long start = millis();
+  while (now < 8 * 3600 * 2 && millis() - start < 10000) {
+    delay(200);
+    sysLog(".");
+    now = time(nullptr);
+  }
+  sysLog("\n");
+
+  if (now < 8 * 3600 * 2) {
+    sysLog("[NTP] ATTENZIONE: sincronizzazione fallita! TLS potrebbe non funzionare.\n");
+  } else {
+    struct tm timeinfo;
+    gmtime_r(&now, &timeinfo);
+    sysLog("[NTP] Orologio sincronizzato: %s", asctime(&timeinfo));
+  }
+}
+
+// --- CONFIGURAZIONE TLS PER MQTTS ---
+void setupTLS() {
+  static BearSSL::X509List caCert(ca_cert);
+  static BearSSL::X509List clientCert(client_cert);
+  static BearSSL::PrivateKey clientKey(client_key);
+
+  wifiClientSecure.setTrustAnchors(&caCert);
+  wifiClientSecure.setClientECCert(&clientCert, &clientKey, BR_KEYTYPE_SIGN, BR_KEYTYPE_EC);
+
+  // Buffer TLS: rx=4096 (necessario per handshake), tx=512 (sufficiente per MQTT)
+  wifiClientSecure.setBufferSizes(4096, 512);
+
+  sysLog("[TLS] Certificati CA + Client caricati (mTLS)\n");
+  sysLog("[TLS] Heap libero dopo setup: %u bytes\n", ESP.getFreeHeap());
+}
+
 void wifiConnect() {
  if (strlen(wifi_ssid) == 0) {
-   Serial.println("[WiFi] Nessun SSID salvato, avvio AP...");
+   sysLog("[WiFi] Nessun SSID salvato, avvio AP...\n");
    apMode = true;
  } else {
-   Serial.printf("[WiFi] Connessione a %s...\n", wifi_ssid);
+   sysLog("[WiFi] Connessione a %s...\n", wifi_ssid);
    WiFi.mode(WIFI_STA);
    WiFi.begin(wifi_ssid, wifi_pass);
    unsigned long t = millis();
    while (WiFi.status() != WL_CONNECTED && millis() - t < 15000) {
      delay(300);
-     Serial.print(".");
+     sysLog(".");
    }
-   Serial.println();
+   sysLog("\n");
    if (WiFi.status() == WL_CONNECTED) {
      apMode = false;
-     Serial.printf("[WiFi] Connesso! IP: %s\n", WiFi.localIP().toString().c_str());
+     sysLog("[WiFi] Connesso! IP: %s\n", WiFi.localIP().toString().c_str());
      return;
    }
-   Serial.println("[WiFi] Connessione fallita, avvio AP...");
+   sysLog("[WiFi] Connessione fallita, avvio AP...\n");
    apMode = true;
  }
  WiFi.mode(WIFI_AP);
  WiFi.softAP("ShellyPlugS-Setup");
- Serial.printf("[AP] SSID: ShellyPlugS-Setup  IP: %s\n",
+ sysLog("[AP] SSID: ShellyPlugS-Setup  IP: %s\n",
                WiFi.softAPIP().toString().c_str());
  for (int i = 0; i < 6; i++) {
    digitalWrite(LED_PIN, LOW);  delay(150);
@@ -606,18 +739,26 @@ void mqttCallback(char* topic, byte* message, unsigned int length) {
 
 void mqttReconnect() {
  if (WiFi.status() != WL_CONNECTED || mqtt.connected()) return;
- Serial.printf("[MQTT] Connessione a %s:%s...\n", mqtt_server, mqtt_port);
+ sysLog("[MQTT] Connessione TLS a %s:%s...\n", mqtt_server, mqtt_port);
+ sysLog("[MQTT] Heap libero: %u bytes\n", ESP.getFreeHeap());
  char lwtTopic[64];
  snprintf(lwtTopic, sizeof(lwtTopic), "%s/online", device_id);
  if (mqtt.connect(device_id, nullptr, nullptr, lwtTopic, 0, true, "0")) {
- Serial.println("[MQTT] Connesso!");
+ sysLog("[MQTT] Connesso via TLS!\n");
  mqtt.subscribe(TOPIC_RELAY_CMD);
  mqtt.subscribe((String(device_id)+"/energy/query").c_str());
  mqtt.subscribe((String(device_id)+"/status/query").c_str());
  mqtt.publish(TOPIC_ONLINE, "1", true);
  publishStatus();
  } else {
- Serial.printf("[MQTT] Fallito rc=%d\n", mqtt.state());
+ sysLog("[MQTT] Fallito rc=%d\n", mqtt.state());
+ char errBuf[128];
+ int lastErr = wifiClientSecure.getLastSSLError(errBuf, sizeof(errBuf));
+ if (lastErr != 0) {
+   sysLog("[TLS] Errore SSL: %d - %s\n", lastErr, errBuf);
+ } else {
+   sysLog("[TLS] Nessun errore SSL specifico riportato\n");
+ }
  }
 }
 
@@ -634,7 +775,8 @@ void handleButton() {
 void setup() {
  Serial.begin(115200);
  delay(100);
- Serial.println("\n=== Shelly Plug S v3.0.0 ===");
+ memset(logRing, 0, LOG_BUF_SIZE);
+ sysLog("\n=== Shelly Plug S v3.0.0 (MQTTS) ===\n");
 
  pinMode(RELAY_PIN, OUTPUT); digitalWrite(RELAY_PIN, LOW);
  pinMode(BTN_PIN, INPUT_PULLUP);
@@ -643,6 +785,12 @@ void setup() {
  loadConfig();
 
  wifiConnect();
+
+  // Sincronizza orologio e configura TLS per MQTTS
+  if (!apMode) {
+    syncNTP();
+    setupTLS();
+  }
 
  snprintf(TOPIC_RELAY_STATE, sizeof(TOPIC_RELAY_STATE), "%s/relay/0", device_id);
  snprintf(TOPIC_RELAY_CMD, sizeof(TOPIC_RELAY_CMD), "%s/relay/0/command", device_id);
@@ -749,6 +897,18 @@ void setup() {
  wifiConnect();
  });
 
+ server.on("/api/logs", []() {
+  String logs;
+  logs.reserve(LOG_BUF_SIZE + 10);
+  if (logFull) {
+    for (int i = logPos; i < LOG_BUF_SIZE; i++) logs += logRing[i];
+    for (int i = 0; i < logPos; i++) logs += logRing[i];
+  } else {
+    for (int i = 0; i < logPos; i++) logs += logRing[i];
+  }
+  server.send(200, "text/plain", logs);
+ });
+
   server.on("/update", HTTP_GET, []() {
     if (!server.authenticate(ota_user, ota_pass)) return server.requestAuthentication();
     String html = "<html><body style='background:#2c3136;color:white;font-family:sans-serif;text-align:center;padding:50px;'>";
@@ -803,10 +963,10 @@ void setup() {
   });
 
  server.begin();
- Serial.println("[HTTP] Web server avviato");
+ sysLog("[HTTP] Web server avviato\n");
 
  digitalWrite(LED_PIN, LOW);
- Serial.printf("[SETUP] Completato — http://%s\n", WiFi.localIP().toString().c_str());
+ sysLog("[SETUP] Completato - http://%s\n", WiFi.localIP().toString().c_str());
 }
 
 void loop() {
