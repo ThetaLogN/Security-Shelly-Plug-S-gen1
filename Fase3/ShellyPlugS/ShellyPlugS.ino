@@ -643,7 +643,8 @@ void setupTLS() {
   static BearSSL::X509List clientCert(client_cert);
   static BearSSL::PrivateKey clientKey(client_key);
 
-  wifiClientSecure.setTrustAnchors(&caCert);
+  // wifiClientSecure.setTrustAnchors(&caCert);
+  wifiClientSecure.setInsecure(); // Ignora l'errore 56 sul nome server/IP
   wifiClientSecure.setClientECCert(&clientCert, &clientKey, BR_KEYTYPE_SIGN, BR_KEYTYPE_EC);
 
   // Buffer TLS: rx=4096 (necessario per handshake), tx=512 (sufficiente per MQTT)
