@@ -25,7 +25,7 @@ uint16_t serverPort = 9999;
 
 char mqtt_server[40] = "74.161.73.178";
 char mqtt_port[6] = "1883";
-char device_id[32] = "shellyplug-s-emulator";
+char device_id[32] = "shellyplug-s-DC43B6";
 char udp_ip_cfg[16] = "74.161.73.178";
 char udp_port_cfg[6] = "9999";
 char wifi_ssid[32]  = "";
@@ -645,20 +645,20 @@ void mqttCallback(char* topic, byte* message, unsigned int length) {
  else if (strcmp(msg,"off")==0 || strcmp(msg,"0")==0) { digitalWrite(RELAY_PIN, LOW); publishStatus(); }
  else if (strcmp(msg,"toggle")==0) { digitalWrite(RELAY_PIN, !digitalRead(RELAY_PIN)); publishStatus(); }
  }
- if (strcmp(topic, (String(device_id)+"/energy/query").c_str()) == 0) publishEnergy();
- if (strcmp(topic, (String(device_id)+"/status/query").c_str()) == 0) publishStatus();
+ if (strcmp(topic, ("shellies/" + String(device_id)+"/energy/query").c_str()) == 0) publishEnergy();
+ if (strcmp(topic, ("shellies/" + String(device_id)+"/status/query").c_str()) == 0) publishStatus();
 }
 
 void mqttReconnect() {
  if (WiFi.status() != WL_CONNECTED || mqtt.connected()) return;
  Serial.printf("[MQTT] Connessione a %s:%s...\n", mqtt_server, mqtt_port);
  char lwtTopic[64];
- snprintf(lwtTopic, sizeof(lwtTopic), "%s/online", device_id);
+ snprintf(lwtTopic, sizeof(lwtTopic), "shellies/%s/online", device_id);
  if (mqtt.connect(device_id, nullptr, nullptr, lwtTopic, 0, true, "0")) {
  Serial.println("[MQTT] Connesso!");
  mqtt.subscribe(TOPIC_RELAY_CMD);
- mqtt.subscribe((String(device_id)+"/energy/query").c_str());
- mqtt.subscribe((String(device_id)+"/status/query").c_str());
+ mqtt.subscribe(("shellies/" + String(device_id)+"/energy/query").c_str());
+ mqtt.subscribe(("shellies/" + String(device_id)+"/status/query").c_str());
  mqtt.publish(TOPIC_ONLINE, "1", true);
  publishStatus();
  } else {
@@ -716,15 +716,15 @@ void setup() {
  wifiConnect();
 
  
- snprintf(TOPIC_RELAY_STATE, sizeof(TOPIC_RELAY_STATE), "%s/relay/0", device_id);
- snprintf(TOPIC_RELAY_CMD, sizeof(TOPIC_RELAY_CMD), "%s/relay/0/command", device_id);
- snprintf(TOPIC_STATUS, sizeof(TOPIC_STATUS), "%s/status", device_id);
- snprintf(TOPIC_ENERGY, sizeof(TOPIC_ENERGY), "%s/energy", device_id);
- snprintf(TOPIC_POWER, sizeof(TOPIC_POWER), "%s/power", device_id);
- snprintf(TOPIC_CURRENT, sizeof(TOPIC_CURRENT), "%s/current", device_id);
- snprintf(TOPIC_VOLTAGE, sizeof(TOPIC_VOLTAGE), "%s/voltage", device_id);
- snprintf(TOPIC_TEMPERATURE, sizeof(TOPIC_TEMPERATURE), "%s/temperature", device_id);
- snprintf(TOPIC_ONLINE, sizeof(TOPIC_ONLINE), "%s/online", device_id);
+ snprintf(TOPIC_RELAY_STATE, sizeof(TOPIC_RELAY_STATE), "shellies/%s/relay/0", device_id);
+ snprintf(TOPIC_RELAY_CMD, sizeof(TOPIC_RELAY_CMD), "shellies/%s/relay/0/command", device_id);
+ snprintf(TOPIC_STATUS, sizeof(TOPIC_STATUS), "shellies/%s/status", device_id);
+ snprintf(TOPIC_ENERGY, sizeof(TOPIC_ENERGY), "shellies/%s/energy", device_id);
+ snprintf(TOPIC_POWER, sizeof(TOPIC_POWER), "shellies/%s/power", device_id);
+ snprintf(TOPIC_CURRENT, sizeof(TOPIC_CURRENT), "shellies/%s/current", device_id);
+ snprintf(TOPIC_VOLTAGE, sizeof(TOPIC_VOLTAGE), "shellies/%s/voltage", device_id);
+ snprintf(TOPIC_TEMPERATURE, sizeof(TOPIC_TEMPERATURE), "shellies/%s/temperature", device_id);
+ snprintf(TOPIC_ONLINE, sizeof(TOPIC_ONLINE), "shellies/%s/online", device_id);
 
  
  hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
