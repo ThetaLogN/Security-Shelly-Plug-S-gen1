@@ -295,7 +295,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             <div class="list-container">
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
-                        <div class="left"><span class="icon">⚡</span> POWER ON DEFAULT MODE</div>
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span> POWER ON DEFAULT MODE</div>
                         <div class="chevron">▼</div>
                     </div>
                     <div class="submenu-content">
@@ -308,7 +308,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                 </div>
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
-                        <div class="left"><span class="icon">⬆️</span> FIRMWARE UPDATE (OTA)</div>
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span> FIRMWARE UPDATE (OTA)</div>
                         <div class="chevron">▼</div>
                     </div>
                     <div class="submenu-content">
@@ -319,7 +319,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                 </div>
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
-                        <div class="left"><span class="icon">🔄</span> REBOOT / RESET WIFI</div>
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span> REBOOT / RESET WIFI</div>
                         <div class="chevron">▼</div>
                     </div>
                     <div class="submenu-content">

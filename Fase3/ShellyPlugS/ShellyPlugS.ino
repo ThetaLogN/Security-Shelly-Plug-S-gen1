@@ -278,7 +278,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             <div class="list-container">
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
-                        <div class="left"><span class="icon">⚡</span> POWER ON DEFAULT MODE</div>
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span> POWER ON DEFAULT MODE</div>
                         <div class="chevron">▼</div>
                     </div>
                     <div class="submenu-content">
@@ -291,18 +291,17 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                 </div>
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
-                        <div class="left"><span class="icon">⬆️</span> FIRMWARE UPDATE (OTA)</div>
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span> FIRMWARE UPDATE (OTA)</div>
                         <div class="chevron">▼</div>
                     </div>
                     <div class="submenu-content">
-                        <p>Versione attuale: <strong>v3.0.0</strong></p>
                         <p style="color:var(--text-muted);font-size:11px;">Carica un file .bin </p>
                         <button class="btn-save" onclick="window.location.href='/update'">⬆ Apri OTA Update</button>
                     </div>
                 </div>
                 <div class="menu-row">
                     <div class="list-item" onclick="toggleAccordion(this)">
-                        <div class="left"><span class="icon">🔄</span> REBOOT / RESET WIFI</div>
+                        <div class="left"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span> REBOOT / RESET WIFI</div>
                         <div class="chevron">▼</div>
                     </div>
                     <div class="submenu-content">
@@ -717,9 +716,11 @@ void mqttCallback(char *topic, byte *message, unsigned int length) {
       publishStatus();
     }
   }
-  if (strcmp(topic, ("shellies/" + String(device_id) + "/energy/query").c_str()) == 0)
+  if (strcmp(topic,
+             ("shellies/" + String(device_id) + "/energy/query").c_str()) == 0)
     publishEnergy();
-  if (strcmp(topic, ("shellies/" + String(device_id) + "/status/query").c_str()) == 0)
+  if (strcmp(topic,
+             ("shellies/" + String(device_id) + "/status/query").c_str()) == 0)
     publishStatus();
 }
 
@@ -782,14 +783,14 @@ void setup() {
 
   snprintf(TOPIC_RELAY_STATE, sizeof(TOPIC_RELAY_STATE), "shellies/%s/relay/0",
            device_id);
-  snprintf(TOPIC_RELAY_CMD, sizeof(TOPIC_RELAY_CMD), "shellies/%s/relay/0/command",
-           device_id);
+  snprintf(TOPIC_RELAY_CMD, sizeof(TOPIC_RELAY_CMD),
+           "shellies/%s/relay/0/command", device_id);
   snprintf(TOPIC_STATUS, sizeof(TOPIC_STATUS), "shellies/%s/status", device_id);
   snprintf(TOPIC_ENERGY, sizeof(TOPIC_ENERGY), "shellies/%s/energy", device_id);
   snprintf(TOPIC_POWER, sizeof(TOPIC_POWER), "shellies/%s/power", device_id);
 
-  snprintf(TOPIC_TEMPERATURE, sizeof(TOPIC_TEMPERATURE), "shellies/%s/temperature",
-           device_id);
+  snprintf(TOPIC_TEMPERATURE, sizeof(TOPIC_TEMPERATURE),
+           "shellies/%s/temperature", device_id);
   snprintf(TOPIC_ONLINE, sizeof(TOPIC_ONLINE), "shellies/%s/online", device_id);
 
   hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
@@ -914,15 +915,11 @@ void setup() {
     wifiConnect();
   });
 
-
-
   server.on("/update", HTTP_GET, []() {
     String html = "<html><body "
                   "style='background:#2c3136;color:white;font-family:sans-"
                   "serif;text-align:center;padding:50px;'>";
     html += "<h2>Shelly Plug S - OTA Protetto</h2>";
-    html += "<p style='color:#a0a0a0'>Carica il file <b>_firmato.bin</b> "
-            "generato dallo script Python.</p>";
     html +=
         "<form method='POST' action='/update' enctype='multipart/form-data'>";
     html += "<input type='file' name='update' accept='.bin' "
