@@ -762,7 +762,6 @@ void handleButton() {
 void setup() {
   Serial.begin(115200);
   delay(100);
-  memset(logRing, 0, LOG_BUF_SIZE);
   sysLog("\n=== Shelly Plug S v3.0.0 (MQTTS) ===\n");
 
   pinMode(RELAY_PIN, OUTPUT);
