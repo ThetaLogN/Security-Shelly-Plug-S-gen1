@@ -1,12 +1,12 @@
-#include <FS.h>
-#include <LittleFS.h>
-#include <ESP8266WiFi.h>
-#include <PubSubClient.h>
-#include <HLW8012.h>
-#include <ESP8266WebServer.h>
 #include <ArduinoJson.h>
-#include <math.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266WiFi.h>
+#include <FS.h>
+#include <HLW8012.h>
+#include <LittleFS.h>
+#include <PubSubClient.h>
 #include <bearssl/bearssl.h>
+#include <math.h>
 #include <time.h>
 
 #define RELAY_PIN 15
@@ -18,15 +18,11 @@
 #define ANALOG_PIN A0
 #define CURRENT_MODE LOW
 
-// --- CREDENZIALI PROTEZIONE OTA ---
-const char* ota_user = "admin";
-const char* ota_pass = "admin";
-
 char mqtt_server[40] = "74.161.73.178";
 char mqtt_port[6] = "8883";
 char device_id[32] = "shellyplug-s-emulator";
-char wifi_ssid[32]  = "";
-char wifi_pass[64]  = "";
+char wifi_ssid[32] = "";
+char wifi_pass[64] = "";
 bool apMode = false;
 
 BearSSL::WiFiClientSecure wifiClientSecure;
@@ -38,10 +34,10 @@ unsigned long lastSend = 0;
 const unsigned long SEND_INTERVAL_MS = 60000;
 char payload[256];
 
-const double R_PULLUP         = 9480.0;   
-const double R_NTC_NOMINAL    = 10000.0;   
-const double TEMP_NOMINAL     = 25.0;
-const double BETA_COEFFICIENT = 3350.0; 
+const double R_PULLUP = 9480.0;
+const double R_NTC_NOMINAL = 10000.0;
+const double TEMP_NOMINAL = 25.0;
+const double BETA_COEFFICIENT = 3350.0;
 
 char TOPIC_RELAY_STATE[64];
 char TOPIC_RELAY_CMD[64];
@@ -61,18 +57,20 @@ char logRing[LOG_BUF_SIZE];
 int logPos = 0;
 bool logFull = false;
 
-void sysLog(const char* fmt, ...) {
+void sysLog(const char *fmt, ...) {
   char line[160];
   va_list args;
   va_start(args, fmt);
   int len = vsnprintf(line, sizeof(line), fmt, args);
   va_end(args);
-  if (len <= 0) return;
+  if (len <= 0)
+    return;
   Serial.print(line);
   for (int i = 0; i < len; i++) {
     logRing[logPos] = line[i];
     logPos = (logPos + 1) % LOG_BUF_SIZE;
-    if (logPos == 0) logFull = true;
+    if (logPos == 0)
+      logFull = true;
   }
 }
 
@@ -366,7 +364,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
         <div class="footer">
             <p>Allterco Robotics Ltd.</p>
-            <span style="color:var(--shelly-blue)">support@shelly.cloud</span> 2 <span style="color:var(--shelly-blue)">https://shelly.cloud</span>
+            <span style="color:var(--shelly-blue)">support@shelly.cloud</span> | <span style="color:var(--shelly-blue)">https://shelly.cloud</span>
         </div>
     </div>
 
@@ -549,30 +547,32 @@ WHCvTVZJ/FtuqdB6fCB6f/yWgq0kZzcNlQ==
 )EOF";
 
 float getValidPower(float voltage, float current, bool relay) {
-    float calculatedPower = voltage * current;
+  float calculatedPower = voltage * current;
 
-    if (relay){
-        if (calculatedPower >= 0.1 && calculatedPower <= 25000.0) {
-        last_correct_power = calculatedPower;
-        }
-    }else{
-        last_correct_power = 0.0;
+  if (relay) {
+    if (calculatedPower >= 0.1 && calculatedPower <= 25000.0) {
+      last_correct_power = calculatedPower;
     }
+  } else {
+    last_correct_power = 0.0;
+  }
 
-    return last_correct_power;
+  return last_correct_power;
 }
 
 double getRealTemperature() {
   int rawADC = analogRead(ANALOG_PIN);
 
-  if (rawADC >= 1023) return -273.0;  
-  if (rawADC <= 0)    return 999.0;   
+  if (rawADC >= 1023)
+    return -273.0;
+  if (rawADC <= 0)
+    return 999.0;
 
   double R_ntc = ((double)rawADC * R_PULLUP) / (1024.0 - (double)rawADC);
 
-  double steinhart = (double)BETA_COEFFICIENT
-                   / (BETA_COEFFICIENT / (TEMP_NOMINAL + 273.15)
-                   + log(R_ntc / R_NTC_NOMINAL));
+  double steinhart =
+      (double)BETA_COEFFICIENT /
+      (BETA_COEFFICIENT / (TEMP_NOMINAL + 273.15) + log(R_ntc / R_NTC_NOMINAL));
   steinhart -= 273.15;
 
   return steinhart;
@@ -582,36 +582,47 @@ void ICACHE_RAM_ATTR hlw8012_cf1_interrupt() { hlw8012.cf1_interrupt(); }
 void ICACHE_RAM_ATTR hlw8012_cf_interrupt() { hlw8012.cf_interrupt(); }
 
 void loadConfig() {
- if (!LittleFS.begin()) return;
- if (!LittleFS.exists("/config.json")) return;
- File f = LittleFS.open("/config.json", "r");
- if (!f) return;
- size_t size = f.size();
- std::unique_ptr<char[]> buf(new char[size]);
- f.readBytes(buf.get(), size);
- f.close();
- DynamicJsonDocument json(1024);
- if (deserializeJson(json, buf.get())) return;
- if (json.containsKey("mqtt_server")) strcpy(mqtt_server, json["mqtt_server"]);
- if (json.containsKey("mqtt_port"))   strcpy(mqtt_port,   json["mqtt_port"]);
- if (json.containsKey("device_id"))   strcpy(device_id,   json["device_id"]);
- if (json.containsKey("wifi_ssid"))   strcpy(wifi_ssid,   json["wifi_ssid"]);
- if (json.containsKey("wifi_pass"))   strcpy(wifi_pass,   json["wifi_pass"]);
+  if (!LittleFS.begin())
+    return;
+  if (!LittleFS.exists("/config.json"))
+    return;
+  File f = LittleFS.open("/config.json", "r");
+  if (!f)
+    return;
+  size_t size = f.size();
+  std::unique_ptr<char[]> buf(new char[size]);
+  f.readBytes(buf.get(), size);
+  f.close();
+  DynamicJsonDocument json(1024);
+  if (deserializeJson(json, buf.get()))
+    return;
+  if (json.containsKey("mqtt_server"))
+    strcpy(mqtt_server, json["mqtt_server"]);
+  if (json.containsKey("mqtt_port"))
+    strcpy(mqtt_port, json["mqtt_port"]);
+  if (json.containsKey("device_id"))
+    strcpy(device_id, json["device_id"]);
+  if (json.containsKey("wifi_ssid"))
+    strcpy(wifi_ssid, json["wifi_ssid"]);
+  if (json.containsKey("wifi_pass"))
+    strcpy(wifi_pass, json["wifi_pass"]);
 }
 
 void saveConfig() {
- if (!LittleFS.begin()) return;
- DynamicJsonDocument json(1024);
- json["mqtt_server"] = mqtt_server;
- json["mqtt_port"]   = mqtt_port;
- json["device_id"]   = device_id;
- json["wifi_ssid"]   = wifi_ssid;
- json["wifi_pass"]   = wifi_pass;
- File f = LittleFS.open("/config.json", "w");
- if (!f) return;
- serializeJson(json, f);
- f.close();
- Serial.println("[CFG] Configurazione salvata");
+  if (!LittleFS.begin())
+    return;
+  DynamicJsonDocument json(1024);
+  json["mqtt_server"] = mqtt_server;
+  json["mqtt_port"] = mqtt_port;
+  json["device_id"] = device_id;
+  json["wifi_ssid"] = wifi_ssid;
+  json["wifi_pass"] = wifi_pass;
+  File f = LittleFS.open("/config.json", "w");
+  if (!f)
+    return;
+  serializeJson(json, f);
+  f.close();
+  Serial.println("[CFG] Configurazione salvata");
 }
 
 // --- SINCRONIZZAZIONE NTP (necessaria per validazione certificati TLS) ---
@@ -629,7 +640,8 @@ void syncNTP() {
   sysLog("\n");
 
   if (now < 8 * 3600 * 2) {
-    sysLog("[NTP] ATTENZIONE: sincronizzazione fallita! TLS potrebbe non funzionare.\n");
+    sysLog("[NTP] ATTENZIONE: sincronizzazione fallita! TLS potrebbe non "
+           "funzionare.\n");
   } else {
     struct tm timeinfo;
     gmtime_r(&now, &timeinfo);
@@ -644,9 +656,11 @@ void setupTLS() {
   static BearSSL::PrivateKey clientKey(client_key);
 
   wifiClientSecure.setTrustAnchors(&caCert);
-  wifiClientSecure.setClientECCert(&clientCert, &clientKey, BR_KEYTYPE_SIGN, BR_KEYTYPE_EC);
+  wifiClientSecure.setClientECCert(&clientCert, &clientKey, BR_KEYTYPE_SIGN,
+                                   BR_KEYTYPE_EC);
 
-  // Buffer TLS: rx=4096 (necessario per handshake), tx=512 (sufficiente per MQTT)
+  // Buffer TLS: rx=4096 (necessario per handshake), tx=512 (sufficiente per
+  // MQTT)
   wifiClientSecure.setBufferSizes(4096, 512);
 
   sysLog("[TLS] Certificati CA + Client caricati (mTLS)\n");
@@ -654,137 +668,153 @@ void setupTLS() {
 }
 
 void wifiConnect() {
- if (strlen(wifi_ssid) == 0) {
-   sysLog("[WiFi] Nessun SSID salvato, avvio AP...\n");
-   apMode = true;
- } else {
-   sysLog("[WiFi] Connessione a %s...\n", wifi_ssid);
-   WiFi.mode(WIFI_STA);
-   WiFi.begin(wifi_ssid, wifi_pass);
-   unsigned long t = millis();
-   while (WiFi.status() != WL_CONNECTED && millis() - t < 15000) {
-     delay(300);
-     sysLog(".");
-   }
-   sysLog("\n");
-   if (WiFi.status() == WL_CONNECTED) {
-     apMode = false;
-     sysLog("[WiFi] Connesso! IP: %s\n", WiFi.localIP().toString().c_str());
-     return;
-   }
-   sysLog("[WiFi] Connessione fallita, avvio AP...\n");
-   apMode = true;
- }
- WiFi.mode(WIFI_AP);
- WiFi.softAP("ShellyPlugS-Setup");
- sysLog("[AP] SSID: ShellyPlugS-Setup  IP: %s\n",
-               WiFi.softAPIP().toString().c_str());
- for (int i = 0; i < 6; i++) {
-   digitalWrite(LED_PIN, LOW);  delay(150);
-   digitalWrite(LED_PIN, HIGH); delay(150);
- }
+  if (strlen(wifi_ssid) == 0) {
+    sysLog("[WiFi] Nessun SSID salvato, avvio AP...\n");
+    apMode = true;
+  } else {
+    sysLog("[WiFi] Connessione a %s...\n", wifi_ssid);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(wifi_ssid, wifi_pass);
+    unsigned long t = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - t < 15000) {
+      delay(300);
+      sysLog(".");
+    }
+    sysLog("\n");
+    if (WiFi.status() == WL_CONNECTED) {
+      apMode = false;
+      sysLog("[WiFi] Connesso! IP: %s\n", WiFi.localIP().toString().c_str());
+      return;
+    }
+    sysLog("[WiFi] Connessione fallita, avvio AP...\n");
+    apMode = true;
+  }
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("ShellyPlugS-Setup");
+  sysLog("[AP] SSID: ShellyPlugS-Setup  IP: %s\n",
+         WiFi.softAPIP().toString().c_str());
+  for (int i = 0; i < 6; i++) {
+    digitalWrite(LED_PIN, LOW);
+    delay(150);
+    digitalWrite(LED_PIN, HIGH);
+    delay(150);
+  }
 }
 
-void publishStatus(){
- if (!mqtt.connected()) return;
- bool on = digitalRead(RELAY_PIN);
- mqtt.publish(TOPIC_RELAY_STATE, on ? "1" : "0", true);
- StaticJsonDocument<128> doc;
- doc["ison"] = on;
- doc["uptime"] = millis() / 1000;
- char buf[128];
- serializeJson(doc, buf);
- mqtt.publish(TOPIC_STATUS, buf);
+void publishStatus() {
+  if (!mqtt.connected())
+    return;
+  bool on = digitalRead(RELAY_PIN);
+  mqtt.publish(TOPIC_RELAY_STATE, on ? "1" : "0", true);
+  StaticJsonDocument<128> doc;
+  doc["ison"] = on;
+  doc["uptime"] = millis() / 1000;
+  char buf[128];
+  serializeJson(doc, buf);
+  mqtt.publish(TOPIC_STATUS, buf);
 }
 
 void publishEnergy() {
- if (!mqtt.connected()) return;
- float current = hlw8012.getCurrent();
- float voltage = hlw8012.getVoltage();
- float power = getValidPower(voltage, current, (bool)digitalRead(RELAY_PIN));
- double temp = getRealTemperature();
+  if (!mqtt.connected())
+    return;
+  float current = hlw8012.getCurrent();
+  float voltage = hlw8012.getVoltage();
+  float power = getValidPower(voltage, current, (bool)digitalRead(RELAY_PIN));
+  double temp = getRealTemperature();
 
- static unsigned long lastEnergyTime = 0;
- static float cumulativeEnergy = 0.0;
- unsigned long now = millis();
- if (lastEnergyTime > 0) {
-   float hours = (now - lastEnergyTime) / 3600000.0;
-   cumulativeEnergy += power * hours;
- }
- lastEnergyTime = now;
+  static unsigned long lastEnergyTime = 0;
+  static float cumulativeEnergy = 0.0;
+  unsigned long now = millis();
+  if (lastEnergyTime > 0) {
+    float hours = (now - lastEnergyTime) / 3600000.0;
+    cumulativeEnergy += power * hours;
+  }
+  lastEnergyTime = now;
 
- char buf[32];
- snprintf(buf, sizeof(buf), "%.2f", power);
- mqtt.publish(TOPIC_POWER, buf);
+  char buf[32];
+  snprintf(buf, sizeof(buf), "%.2f", power);
+  mqtt.publish(TOPIC_POWER, buf);
 
- snprintf(buf, sizeof(buf), "%.3f", cumulativeEnergy);
- mqtt.publish(TOPIC_ENERGY, buf);
+  snprintf(buf, sizeof(buf), "%.3f", cumulativeEnergy);
+  mqtt.publish(TOPIC_ENERGY, buf);
 
- snprintf(buf, sizeof(buf), "%.1f", temp);
- mqtt.publish(TOPIC_TEMPERATURE, buf);
+  snprintf(buf, sizeof(buf), "%.1f", temp);
+  mqtt.publish(TOPIC_TEMPERATURE, buf);
 }
 
-void mqttCallback(char* topic, byte* message, unsigned int length) {
- char msg[64] = {0};
- memcpy(msg, message, min((unsigned int)63, length));
- Serial.printf("[MQTT] RX [%s] = %s\n", topic, msg);
- if (strcmp(topic, TOPIC_RELAY_CMD) == 0) {
- if (strcmp(msg,"on")==0 || strcmp(msg,"1")==0) { digitalWrite(RELAY_PIN, HIGH); publishStatus(); }
- else if (strcmp(msg,"off")==0 || strcmp(msg,"0")==0) { digitalWrite(RELAY_PIN, LOW); publishStatus(); }
- else if (strcmp(msg,"toggle")==0) { digitalWrite(RELAY_PIN, !digitalRead(RELAY_PIN)); publishStatus(); }
- }
- if (strcmp(topic, (String(device_id)+"/energy/query").c_str()) == 0) publishEnergy();
- if (strcmp(topic, (String(device_id)+"/status/query").c_str()) == 0) publishStatus();
+void mqttCallback(char *topic, byte *message, unsigned int length) {
+  char msg[64] = {0};
+  memcpy(msg, message, min((unsigned int)63, length));
+  Serial.printf("[MQTT] RX [%s] = %s\n", topic, msg);
+  if (strcmp(topic, TOPIC_RELAY_CMD) == 0) {
+    if (strcmp(msg, "on") == 0 || strcmp(msg, "1") == 0) {
+      digitalWrite(RELAY_PIN, HIGH);
+      publishStatus();
+    } else if (strcmp(msg, "off") == 0 || strcmp(msg, "0") == 0) {
+      digitalWrite(RELAY_PIN, LOW);
+      publishStatus();
+    } else if (strcmp(msg, "toggle") == 0) {
+      digitalWrite(RELAY_PIN, !digitalRead(RELAY_PIN));
+      publishStatus();
+    }
+  }
+  if (strcmp(topic, (String(device_id) + "/energy/query").c_str()) == 0)
+    publishEnergy();
+  if (strcmp(topic, (String(device_id) + "/status/query").c_str()) == 0)
+    publishStatus();
 }
 
 void mqttReconnect() {
- if (WiFi.status() != WL_CONNECTED || mqtt.connected()) return;
- sysLog("[MQTT] Connessione TLS a %s:%s...\n", mqtt_server, mqtt_port);
- sysLog("[MQTT] Heap libero: %u bytes\n", ESP.getFreeHeap());
- char lwtTopic[64];
- snprintf(lwtTopic, sizeof(lwtTopic), "%s/online", device_id);
- if (mqtt.connect(device_id, nullptr, nullptr, lwtTopic, 0, true, "0")) {
- sysLog("[MQTT] Connesso via TLS!\n");
- mqtt.subscribe(TOPIC_RELAY_CMD);
- mqtt.subscribe((String(device_id)+"/energy/query").c_str());
- mqtt.subscribe((String(device_id)+"/status/query").c_str());
- mqtt.publish(TOPIC_ONLINE, "1", true);
- publishStatus();
- } else {
- sysLog("[MQTT] Fallito rc=%d\n", mqtt.state());
- char errBuf[128];
- int lastErr = wifiClientSecure.getLastSSLError(errBuf, sizeof(errBuf));
- if (lastErr != 0) {
-   sysLog("[TLS] Errore SSL: %d - %s\n", lastErr, errBuf);
- } else {
-   sysLog("[TLS] Nessun errore SSL specifico riportato\n");
- }
- }
+  if (WiFi.status() != WL_CONNECTED || mqtt.connected())
+    return;
+  sysLog("[MQTT] Connessione TLS a %s:%s...\n", mqtt_server, mqtt_port);
+  sysLog("[MQTT] Heap libero: %u bytes\n", ESP.getFreeHeap());
+  char lwtTopic[64];
+  snprintf(lwtTopic, sizeof(lwtTopic), "%s/online", device_id);
+  if (mqtt.connect(device_id, nullptr, nullptr, lwtTopic, 0, true, "0")) {
+    sysLog("[MQTT] Connesso via TLS!\n");
+    mqtt.subscribe(TOPIC_RELAY_CMD);
+    mqtt.subscribe((String(device_id) + "/energy/query").c_str());
+    mqtt.subscribe((String(device_id) + "/status/query").c_str());
+    mqtt.publish(TOPIC_ONLINE, "1", true);
+    publishStatus();
+  } else {
+    sysLog("[MQTT] Fallito rc=%d\n", mqtt.state());
+    char errBuf[128];
+    int lastErr = wifiClientSecure.getLastSSLError(errBuf, sizeof(errBuf));
+    if (lastErr != 0) {
+      sysLog("[TLS] Errore SSL: %d - %s\n", lastErr, errBuf);
+    } else {
+      sysLog("[TLS] Nessun errore SSL specifico riportato\n");
+    }
+  }
 }
 
 void handleButton() {
- static unsigned long lastPress = 0;
- if (digitalRead(BTN_PIN) == LOW && millis() - lastPress > 200) {
- lastPress = millis();
- digitalWrite(RELAY_PIN, !digitalRead(RELAY_PIN));
- publishStatus();
- Serial.println("[BTN] Toggle relay");
- }
+  static unsigned long lastPress = 0;
+  if (digitalRead(BTN_PIN) == LOW && millis() - lastPress > 200) {
+    lastPress = millis();
+    digitalWrite(RELAY_PIN, !digitalRead(RELAY_PIN));
+    publishStatus();
+    Serial.println("[BTN] Toggle relay");
+  }
 }
 
 void setup() {
- Serial.begin(115200);
- delay(100);
- memset(logRing, 0, LOG_BUF_SIZE);
- sysLog("\n=== Shelly Plug S v3.0.0 (MQTTS) ===\n");
+  Serial.begin(115200);
+  delay(100);
+  memset(logRing, 0, LOG_BUF_SIZE);
+  sysLog("\n=== Shelly Plug S v3.0.0 (MQTTS) ===\n");
 
- pinMode(RELAY_PIN, OUTPUT); digitalWrite(RELAY_PIN, LOW);
- pinMode(BTN_PIN, INPUT_PULLUP);
- pinMode(LED_PIN, OUTPUT); digitalWrite(LED_PIN, HIGH);
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, LOW);
+  pinMode(BTN_PIN, INPUT_PULLUP);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, HIGH);
 
- loadConfig();
+  loadConfig();
 
- wifiConnect();
+  wifiConnect();
 
   // Sincronizza orologio e configura TLS per MQTTS
   if (!apMode) {
@@ -792,197 +822,253 @@ void setup() {
     setupTLS();
   }
 
- snprintf(TOPIC_RELAY_STATE, sizeof(TOPIC_RELAY_STATE), "%s/relay/0", device_id);
- snprintf(TOPIC_RELAY_CMD, sizeof(TOPIC_RELAY_CMD), "%s/relay/0/command", device_id);
- snprintf(TOPIC_STATUS, sizeof(TOPIC_STATUS), "%s/status", device_id);
- snprintf(TOPIC_ENERGY, sizeof(TOPIC_ENERGY), "%s/energy", device_id);
- snprintf(TOPIC_POWER, sizeof(TOPIC_POWER), "%s/power", device_id);
- snprintf(TOPIC_CURRENT, sizeof(TOPIC_CURRENT), "%s/current", device_id);
- snprintf(TOPIC_VOLTAGE, sizeof(TOPIC_VOLTAGE), "%s/voltage", device_id);
- snprintf(TOPIC_TEMPERATURE, sizeof(TOPIC_TEMPERATURE), "%s/temperature", device_id);
- snprintf(TOPIC_ONLINE, sizeof(TOPIC_ONLINE), "%s/online", device_id);
+  snprintf(TOPIC_RELAY_STATE, sizeof(TOPIC_RELAY_STATE), "%s/relay/0",
+           device_id);
+  snprintf(TOPIC_RELAY_CMD, sizeof(TOPIC_RELAY_CMD), "%s/relay/0/command",
+           device_id);
+  snprintf(TOPIC_STATUS, sizeof(TOPIC_STATUS), "%s/status", device_id);
+  snprintf(TOPIC_ENERGY, sizeof(TOPIC_ENERGY), "%s/energy", device_id);
+  snprintf(TOPIC_POWER, sizeof(TOPIC_POWER), "%s/power", device_id);
+  snprintf(TOPIC_CURRENT, sizeof(TOPIC_CURRENT), "%s/current", device_id);
+  snprintf(TOPIC_VOLTAGE, sizeof(TOPIC_VOLTAGE), "%s/voltage", device_id);
+  snprintf(TOPIC_TEMPERATURE, sizeof(TOPIC_TEMPERATURE), "%s/temperature",
+           device_id);
+  snprintf(TOPIC_ONLINE, sizeof(TOPIC_ONLINE), "%s/online", device_id);
 
- hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
- hlw8012.setResistors(0.001, 2480000, 1000);
- hlw8012.setVoltageMultiplier(888.07);
- hlw8012.setCurrentMultiplier(431086.01);
- hlw8012.setPowerMultiplier(930.0);
+  hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 1000000);
+  hlw8012.setResistors(0.001, 2480000, 1000);
+  hlw8012.setVoltageMultiplier(888.07);
+  hlw8012.setCurrentMultiplier(431086.01);
+  hlw8012.setPowerMultiplier(930.0);
 
- attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
- attachInterrupt(digitalPinToInterrupt(CF_PIN), hlw8012_cf_interrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt,
+                  CHANGE);
+  attachInterrupt(digitalPinToInterrupt(CF_PIN), hlw8012_cf_interrupt, CHANGE);
 
- mqtt.setServer(mqtt_server, atoi(mqtt_port));
- mqtt.setCallback(mqttCallback);
- mqtt.setBufferSize(512);
+  mqtt.setServer(mqtt_server, atoi(mqtt_port));
+  mqtt.setCallback(mqttCallback);
+  mqtt.setBufferSize(512);
 
- server.on("/", []() {
- server.send_P(200, "text/html", index_html);
- });
+  server.on("/", []() { server.send_P(200, "text/html", index_html); });
 
- server.on("/status", []() {
- StaticJsonDocument<256> doc;
- doc["ison"] = (bool)digitalRead(RELAY_PIN);
- doc["voltage"] = hlw8012.getVoltage();
- doc["current"] = hlw8012.getCurrent();
- doc["power"] = getValidPower(hlw8012.getVoltage(), hlw8012.getCurrent(), (bool)digitalRead(RELAY_PIN));
- doc["temp"] = getRealTemperature();
- doc["uptime"] = millis() / 1000;
- doc["ip"] = WiFi.localIP().toString();
- char buf[256]; serializeJson(doc, buf);
- server.send(200, "application/json", buf);
- });
+  server.on("/status", []() {
+    StaticJsonDocument<256> doc;
+    doc["ison"] = (bool)digitalRead(RELAY_PIN);
+    doc["voltage"] = hlw8012.getVoltage();
+    doc["current"] = hlw8012.getCurrent();
+    doc["power"] = getValidPower(hlw8012.getVoltage(), hlw8012.getCurrent(),
+                                 (bool)digitalRead(RELAY_PIN));
+    doc["temp"] = getRealTemperature();
+    doc["uptime"] = millis() / 1000;
+    doc["ip"] = WiFi.localIP().toString();
+    char buf[256];
+    serializeJson(doc, buf);
+    server.send(200, "application/json", buf);
+  });
 
- server.on("/relay/0", []() {
- if (server.hasArg("turn")) {
- String a = server.arg("turn");
- if (a == "on") digitalWrite(RELAY_PIN, HIGH);
- else if (a == "off") digitalWrite(RELAY_PIN, LOW);
- else if (a == "toggle") digitalWrite(RELAY_PIN, !digitalRead(RELAY_PIN));
- publishStatus();
- }
- StaticJsonDocument<64> doc;
- doc["ison"] = (bool)digitalRead(RELAY_PIN);
- doc["power"] = hlw8012.getActivePower();
- char buf[64]; serializeJson(doc, buf);
- server.send(200, "application/json", buf);
- });
+  server.on("/relay/0", []() {
+    if (server.hasArg("turn")) {
+      String a = server.arg("turn");
+      if (a == "on")
+        digitalWrite(RELAY_PIN, HIGH);
+      else if (a == "off")
+        digitalWrite(RELAY_PIN, LOW);
+      else if (a == "toggle")
+        digitalWrite(RELAY_PIN, !digitalRead(RELAY_PIN));
+      publishStatus();
+    }
+    StaticJsonDocument<64> doc;
+    doc["ison"] = (bool)digitalRead(RELAY_PIN);
+    doc["power"] = hlw8012.getActivePower();
+    char buf[64];
+    serializeJson(doc, buf);
+    server.send(200, "application/json", buf);
+  });
 
- server.on("/api/config", []() {
- StaticJsonDocument<256> doc;
- doc["mqtt_server"] = mqtt_server;
- doc["mqtt_port"] = mqtt_port;
- doc["device_id"] = device_id;
- char buf[256]; serializeJson(doc, buf);
- server.send(200, "application/json", buf);
- });
+  server.on("/api/config", []() {
+    StaticJsonDocument<256> doc;
+    doc["mqtt_server"] = mqtt_server;
+    doc["mqtt_port"] = mqtt_port;
+    doc["device_id"] = device_id;
+    char buf[256];
+    serializeJson(doc, buf);
+    server.send(200, "application/json", buf);
+  });
 
- server.on("/api/mqtt", HTTP_POST, []() {
- if (!server.hasArg("plain")) { server.send(400, "application/json", "{\"msg\":\"No body\"}"); return; }
- DynamicJsonDocument doc(256);
- if (deserializeJson(doc, server.arg("plain"))) { server.send(400, "application/json", "{\"msg\":\"JSON error\"}"); return; }
- if (doc.containsKey("server")) strlcpy(mqtt_server, doc["server"], sizeof(mqtt_server));
- if (doc.containsKey("port")) strlcpy(mqtt_port, doc["port"], sizeof(mqtt_port));
- if (doc.containsKey("devid")) strlcpy(device_id, doc["devid"], sizeof(device_id));
- saveConfig();
- server.send(200, "application/json", "{\"msg\":\"MQTT salvato! Riavvio per applicare.\"}");
- Serial.println("[MQTT] Config aggiornata, riavvio consigliato");
- });
+  server.on("/api/mqtt", HTTP_POST, []() {
+    if (!server.hasArg("plain")) {
+      server.send(400, "application/json", "{\"msg\":\"No body\"}");
+      return;
+    }
+    DynamicJsonDocument doc(256);
+    if (deserializeJson(doc, server.arg("plain"))) {
+      server.send(400, "application/json", "{\"msg\":\"JSON error\"}");
+      return;
+    }
+    if (doc.containsKey("server"))
+      strlcpy(mqtt_server, doc["server"], sizeof(mqtt_server));
+    if (doc.containsKey("port"))
+      strlcpy(mqtt_port, doc["port"], sizeof(mqtt_port));
+    if (doc.containsKey("devid"))
+      strlcpy(device_id, doc["devid"], sizeof(device_id));
+    saveConfig();
+    server.send(200, "application/json",
+                "{\"msg\":\"MQTT salvato! Riavvio per applicare.\"}");
+    Serial.println("[MQTT] Config aggiornata, riavvio consigliato");
+  });
 
- server.on("/api/wifi", HTTP_POST, []() {
- if (!server.hasArg("plain")) { server.send(400, "application/json", "{\"msg\":\"No body\"}"); return; }
- DynamicJsonDocument doc(256);
- if (deserializeJson(doc, server.arg("plain"))) { server.send(400, "application/json", "{\"msg\":\"JSON error\"}"); return; }
- String ssid = doc["ssid"] | "";
- String pass = doc["pass"] | "";
- if (ssid.isEmpty()) { server.send(400, "application/json", "{\"msg\":\"SSID vuoto\"}"); return; }
- strlcpy(wifi_ssid, ssid.c_str(), sizeof(wifi_ssid));
- strlcpy(wifi_pass, pass.c_str(), sizeof(wifi_pass));
- saveConfig();
- server.send(200, "application/json", "{\"msg\":\"Credenziali salvate, riconnessione...\"}");
- delay(500);
- wifiConnect();
- });
+  server.on("/api/wifi", HTTP_POST, []() {
+    if (!server.hasArg("plain")) {
+      server.send(400, "application/json", "{\"msg\":\"No body\"}");
+      return;
+    }
+    DynamicJsonDocument doc(256);
+    if (deserializeJson(doc, server.arg("plain"))) {
+      server.send(400, "application/json", "{\"msg\":\"JSON error\"}");
+      return;
+    }
+    String ssid = doc["ssid"] | "";
+    String pass = doc["pass"] | "";
+    if (ssid.isEmpty()) {
+      server.send(400, "application/json", "{\"msg\":\"SSID vuoto\"}");
+      return;
+    }
+    strlcpy(wifi_ssid, ssid.c_str(), sizeof(wifi_ssid));
+    strlcpy(wifi_pass, pass.c_str(), sizeof(wifi_pass));
+    saveConfig();
+    server.send(200, "application/json",
+                "{\"msg\":\"Credenziali salvate, riconnessione...\"}");
+    delay(500);
+    wifiConnect();
+  });
 
- server.on("/reboot", []() {
- server.send(200, "text/plain", "Rebooting...");
- delay(1000); ESP.restart();
- });
+  server.on("/reboot", []() {
+    server.send(200, "text/plain", "Rebooting...");
+    delay(1000);
+    ESP.restart();
+  });
 
- server.on("/reset", []() {
- server.send(200, "text/plain", "Reset WiFi in corso...");
- wifi_ssid[0] = '\0';
- wifi_pass[0] = '\0';
- saveConfig();
- delay(500);
- wifiConnect();
- });
+  server.on("/reset", []() {
+    server.send(200, "text/plain", "Reset WiFi in corso...");
+    wifi_ssid[0] = '\0';
+    wifi_pass[0] = '\0';
+    saveConfig();
+    delay(500);
+    wifiConnect();
+  });
 
- server.on("/api/logs", []() {
-  String logs;
-  logs.reserve(LOG_BUF_SIZE + 10);
-  if (logFull) {
-    for (int i = logPos; i < LOG_BUF_SIZE; i++) logs += logRing[i];
-    for (int i = 0; i < logPos; i++) logs += logRing[i];
-  } else {
-    for (int i = 0; i < logPos; i++) logs += logRing[i];
-  }
-  server.send(200, "text/plain", logs);
- });
+  server.on("/api/logs", []() {
+    String logs;
+    logs.reserve(LOG_BUF_SIZE + 10);
+    if (logFull) {
+      for (int i = logPos; i < LOG_BUF_SIZE; i++)
+        logs += logRing[i];
+      for (int i = 0; i < logPos; i++)
+        logs += logRing[i];
+    } else {
+      for (int i = 0; i < logPos; i++)
+        logs += logRing[i];
+    }
+    server.send(200, "text/plain", logs);
+  });
 
   server.on("/update", HTTP_GET, []() {
-    if (!server.authenticate(ota_user, ota_pass)) return server.requestAuthentication();
-    String html = "<html><body style='background:#2c3136;color:white;font-family:sans-serif;text-align:center;padding:50px;'>";
+    String html = "<html><body "
+                  "style='background:#2c3136;color:white;font-family:sans-"
+                  "serif;text-align:center;padding:50px;'>";
     html += "<h2>Shelly Plug S - OTA Protetto</h2>";
-    html += "<p style='color:#a0a0a0'>Carica il file <b>_firmato.bin</b> generato dallo script Python.</p>";
-    html += "<form method='POST' action='/update' enctype='multipart/form-data'>";
-    html += "<input type='file' name='update' accept='.bin' style='padding:10px;background:#16191c;color:white;'><br><br>";
-    html += "<input type='submit' value='Verifica e Aggiorna' style='padding:12px 24px;background:#00adef;border:none;color:white;border-radius:4px;cursor:pointer;font-weight:bold;'>";
+    html += "<p style='color:#a0a0a0'>Carica il file <b>_firmato.bin</b> "
+            "generato dallo script Python.</p>";
+    html +=
+        "<form method='POST' action='/update' enctype='multipart/form-data'>";
+    html += "<input type='file' name='update' accept='.bin' "
+            "style='padding:10px;background:#16191c;color:white;'><br><br>";
+    html +=
+        "<input type='submit' value='Verifica e Aggiorna' style='padding:12px "
+        "24px;background:#00adef;border:none;color:white;border-radius:4px;"
+        "cursor:pointer;font-weight:bold;'>";
     html += "</form></body></html>";
     server.send(200, "text/html", html);
   });
 
-  server.on("/update", HTTP_POST, []() {
-    if (!server.authenticate(ota_user, ota_pass)) return;
-    server.sendHeader("Connection", "close");
-    if (Update.hasError()) {
-      server.send(500, "text/plain", "ERRORE: Aggiornamento Fallito. Firma non valida, file alterato o corrotto.");
-    } else {
-      server.send(200, "text/plain", "SUCCESSO: Firma verificata. Aggiornamento in corso. La presa si riavviera' a breve...");
-      delay(1000);
-      ESP.restart();
-    }
-  }, []() {
-    HTTPUpload& upload = server.upload();
-    
-    if (upload.status == UPLOAD_FILE_START) {
-      Serial.printf("[OTA] Inizio ricezione file: %s\n", upload.filename.c_str());
-      
-      static BearSSL::PublicKey otaPubKey(public_key_pem);
-      static BearSSL::HashSHA256 otaHash;
-      static BearSSL::SigningVerifier otaSign(&otaPubKey); 
-      
-      Update.installSignature(&otaHash, &otaSign);
-      
-      uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-      if (!Update.begin(maxSketchSpace)) { Update.printError(Serial); }
-    } 
-    else if (upload.status == UPLOAD_FILE_WRITE) {
-      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
-        Update.printError(Serial);
-      }
-    } 
-    else if (upload.status == UPLOAD_FILE_END) {
-      if (Update.end(true)) { 
-        Serial.printf("[OTA] Firma Verificata! Dimensione totale: %u bytes\n", upload.totalSize);
-      } else {
-        Serial.println("[OTA] ALLARME INTRUSIONE: La firma non corrisponde alla chiave pubblica.");
-        Update.printError(Serial);
-      }
-    }
-    yield();
-  });
+  server.on(
+      "/update", HTTP_POST,
+      []() {
+        server.sendHeader("Connection", "close");
+        if (Update.hasError()) {
+          server.send(500, "text/plain",
+                      "ERRORE: Aggiornamento Fallito. Firma non valida, file "
+                      "alterato o corrotto.");
+        } else {
+          server.send(200, "text/plain",
+                      "SUCCESSO: Firma verificata. Aggiornamento in corso. La "
+                      "presa si riavviera' a breve...");
+          delay(1000);
+          ESP.restart();
+        }
+      },
+      []() {
+        HTTPUpload &upload = server.upload();
 
- server.begin();
- sysLog("[HTTP] Web server avviato\n");
+        if (upload.status == UPLOAD_FILE_START) {
+          Serial.printf("[OTA] Inizio ricezione file: %s\n",
+                        upload.filename.c_str());
 
- digitalWrite(LED_PIN, LOW);
- sysLog("[SETUP] Completato - http://%s\n", WiFi.localIP().toString().c_str());
+          static BearSSL::PublicKey otaPubKey(public_key_pem);
+          static BearSSL::HashSHA256 otaHash;
+          static BearSSL::SigningVerifier otaSign(&otaPubKey);
+
+          Update.installSignature(&otaHash, &otaSign);
+
+          uint32_t maxSketchSpace =
+              (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+          if (!Update.begin(maxSketchSpace)) {
+            Update.printError(Serial);
+          }
+        } else if (upload.status == UPLOAD_FILE_WRITE) {
+          if (Update.write(upload.buf, upload.currentSize) !=
+              upload.currentSize) {
+            Update.printError(Serial);
+          }
+        } else if (upload.status == UPLOAD_FILE_END) {
+          if (Update.end(true)) {
+            Serial.printf(
+                "[OTA] Firma Verificata! Dimensione totale: %u bytes\n",
+                upload.totalSize);
+          } else {
+            Serial.println("[OTA] ALLARME INTRUSIONE: La firma non corrisponde "
+                           "alla chiave pubblica.");
+            Update.printError(Serial);
+          }
+        }
+        yield();
+      });
+
+  server.begin();
+  sysLog("[HTTP] Web server avviato\n");
+
+  digitalWrite(LED_PIN, LOW);
+  sysLog("[SETUP] Completato - http://%s\n", WiFi.localIP().toString().c_str());
 }
 
 void loop() {
- server.handleClient();
- handleButton();
+  server.handleClient();
+  handleButton();
 
- if (apMode) return; 
+  if (apMode)
+    return;
 
- if (!mqtt.connected()) {
-   static unsigned long lastReconn = 0;
-   if (millis() - lastReconn > 5000) { lastReconn = millis(); mqttReconnect(); }
- }
- mqtt.loop();
+  if (!mqtt.connected()) {
+    static unsigned long lastReconn = 0;
+    if (millis() - lastReconn > 5000) {
+      lastReconn = millis();
+      mqttReconnect();
+    }
+  }
+  mqtt.loop();
 
- if (millis() - lastSend >= SEND_INTERVAL_MS) {
-   lastSend = millis();
-   publishEnergy();
- }
+  if (millis() - lastSend >= SEND_INTERVAL_MS) {
+    lastSend = millis();
+    publishEnergy();
+  }
 }
