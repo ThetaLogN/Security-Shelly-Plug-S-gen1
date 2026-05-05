@@ -44,19 +44,13 @@ char TOPIC_RELAY_CMD[64];
 char TOPIC_STATUS[64];
 char TOPIC_ENERGY[64];
 char TOPIC_POWER[64];
-char TOPIC_CURRENT[64];
-char TOPIC_VOLTAGE[64];
+
 char TOPIC_TEMPERATURE[64];
 char TOPIC_ONLINE[64];
 
 float last_correct_power = 0.0;
 
 // --- SISTEMA LOG IN MEMORIA ---
-#define LOG_BUF_SIZE 2048
-char logRing[LOG_BUF_SIZE];
-int logPos = 0;
-bool logFull = false;
-
 void sysLog(const char *fmt, ...) {
   char line[160];
   va_list args;
@@ -66,12 +60,6 @@ void sysLog(const char *fmt, ...) {
   if (len <= 0)
     return;
   Serial.print(line);
-  for (int i = 0; i < len; i++) {
-    logRing[logPos] = line[i];
-    logPos = (logPos + 1) % LOG_BUF_SIZE;
-    if (logPos == 0)
-      logFull = true;
-  }
 }
 
 const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
@@ -323,17 +311,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
                         <button class="btn-save btn-danger" style="background:#8b0000;" onclick="resetWifi()">Reset WiFi & Reboot</button>
                     </div>
                 </div>
-                <div class="menu-row">
-                    <div class="list-item" onclick="toggleAccordion(this)">
-                        <div class="left"><span class="icon">📋</span> DEBUG LOG</div>
-                        <div class="chevron">▼</div>
-                    </div>
-                    <div class="submenu-content">
-                        <pre id="log-area" style="background:#0d1117;color:#58a6ff;padding:12px;border-radius:4px;font-size:11px;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;margin:0 0 10px 0;">Caricamento log...</pre>
-                        <button class="btn-save" onclick="fetchLogs()">🔄 Aggiorna Log</button>
-                        <label style="display:block;margin-top:10px;font-size:11px;"><input type="checkbox" id="auto-log" onchange="toggleAutoLog()"> Auto-refresh (3s)</label>
-                    </div>
-                </div>
+
 
             </div>
         </div>
@@ -468,26 +446,7 @@ const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
             fetch('/reset').then(() => showToast('Reset WiFi in corso...', '#dc3545'));
         }
 
-        let autoLogTimer = null;
-        function fetchLogs() {
-            fetch('/api/logs')
-                .then(r => r.text())
-                .then(t => {
-                    const el = document.getElementById('log-area');
-                    el.textContent = t || '(nessun log)';
-                    el.scrollTop = el.scrollHeight;
-                })
-                .catch(() => {});
-        }
-        function toggleAutoLog() {
-            if (document.getElementById('auto-log').checked) {
-                fetchLogs();
-                autoLogTimer = setInterval(fetchLogs, 3000);
-            } else {
-                clearInterval(autoLogTimer);
-                autoLogTimer = null;
-            }
-        }
+
     </script>
 </body>
 </html>
@@ -829,8 +788,7 @@ void setup() {
   snprintf(TOPIC_STATUS, sizeof(TOPIC_STATUS), "shellies/%s/status", device_id);
   snprintf(TOPIC_ENERGY, sizeof(TOPIC_ENERGY), "shellies/%s/energy", device_id);
   snprintf(TOPIC_POWER, sizeof(TOPIC_POWER), "shellies/%s/power", device_id);
-  snprintf(TOPIC_CURRENT, sizeof(TOPIC_CURRENT), "shellies/%s/current", device_id);
-  snprintf(TOPIC_VOLTAGE, sizeof(TOPIC_VOLTAGE), "shellies/%s/voltage", device_id);
+
   snprintf(TOPIC_TEMPERATURE, sizeof(TOPIC_TEMPERATURE), "shellies/%s/temperature",
            device_id);
   snprintf(TOPIC_ONLINE, sizeof(TOPIC_ONLINE), "shellies/%s/online", device_id);
@@ -957,20 +915,7 @@ void setup() {
     wifiConnect();
   });
 
-  server.on("/api/logs", []() {
-    String logs;
-    logs.reserve(LOG_BUF_SIZE + 10);
-    if (logFull) {
-      for (int i = logPos; i < LOG_BUF_SIZE; i++)
-        logs += logRing[i];
-      for (int i = 0; i < logPos; i++)
-        logs += logRing[i];
-    } else {
-      for (int i = 0; i < logPos; i++)
-        logs += logRing[i];
-    }
-    server.send(200, "text/plain", logs);
-  });
+
 
   server.on("/update", HTTP_GET, []() {
     String html = "<html><body "
