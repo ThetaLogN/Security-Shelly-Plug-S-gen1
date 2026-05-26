@@ -35,7 +35,7 @@ static volatile uint32_t last_cf1_time = 0;
 static volatile uint32_t cf_period = 0;
 static volatile uint32_t cf1_period = 0;
 
-static double voltage_multiplier = 888.07;
+// static double voltage_multiplier = 888.07;
 static double current_multiplier = 431086.01;
 static double power_multiplier = 930.0;
 
@@ -64,25 +64,33 @@ static void cf1_int_handler(int pin, void *arg) {
 }
 
 static float get_voltage() {
-  if (cf1_period == 0) return 0.0;
-  float freq = 1000000.0 / cf1_period;
-  return freq * voltage_multiplier;
+  return 230.0;
 }
 
 static float get_current() {
+  uint32_t now = mgos_uptime_micros();
+  if (last_cf1_time == 0 || (now - last_cf1_time) > 2000000) {
+    cf1_period = 0;
+    return 0.0;
+  }
   if (cf1_period == 0) return 0.0;
   float freq = 1000000.0 / cf1_period;
   return freq * current_multiplier;
 }
 
 static float get_power() {
+  uint32_t now = mgos_uptime_micros();
+  if (last_cf_time == 0 || (now - last_cf_time) > 2000000) {
+    cf_period = 0;
+    return 0.0;
+  }
   if (cf_period == 0) return 0.0;
   float freq = 1000000.0 / cf_period;
   return freq * power_multiplier;
 }
 
 static float get_valid_power(float voltage, float current, bool relay_on) {
-  float calc_power = voltage * current;
+  float calc_power = get_power();
   if (relay_on) {
     if (calc_power >= 0.1 && calc_power <= 25000.0) {
       last_correct_power = calc_power;
@@ -387,12 +395,25 @@ static void publish_energy() {
   float power = get_valid_power(voltage, current, on);
   double temp = get_real_temperature();
   
+  static double last_energy_time = 0.0;
+  static float cumulative_energy = 0.0;
+  double now = mgos_uptime();
+  if (last_energy_time > 0.0) {
+    float hours = (float)((now - last_energy_time) / 3600.0);
+    cumulative_energy += power * hours;
+  }
+  last_energy_time = now;
+  
   char buf[32];
   char topic[64];
   const char *dev_id = mgos_sys_config_get_mqtt_client_id();
   
   snprintf(topic, sizeof(topic), "shellies/%s/power", dev_id);
   snprintf(buf, sizeof(buf), "%.2f", power);
+  mgos_mqtt_pub(topic, buf, strlen(buf), 1, false);
+  
+  snprintf(topic, sizeof(topic), "shellies/%s/energy", dev_id);
+  snprintf(buf, sizeof(buf), "%.3f", cumulative_energy);
   mgos_mqtt_pub(topic, buf, strlen(buf), 1, false);
   
   snprintf(topic, sizeof(topic), "shellies/%s/temperature", dev_id);

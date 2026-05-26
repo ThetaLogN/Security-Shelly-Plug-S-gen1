@@ -1,7 +1,7 @@
 /* clang-format off */
 /*
  * Generated file - do not edit.
- * Command: /mongoose-os/tools/mgos_gen_config.py --c_name=mgos_config --c_global_name=mgos_sys_config --dest_dir=/data/fwbuild-volumes/2.20.0/apps/shelly-plug-s/esp8266/build_contexts/build_ctx_337715050/build/gen/ /mongoose-os/src/mgos_debug_udp_config.yaml /data/fwbuild-volumes/2.20.0/apps/shelly-plug-s/esp8266/build_contexts/build_ctx_337715050/build/gen/mos_conf_schema.yml
+ * Command: /mongoose-os/tools/mgos_gen_config.py --c_name=mgos_config --c_global_name=mgos_sys_config --dest_dir=/data/fwbuild-volumes/2.20.0/apps/shelly-plug-s/esp8266/build_contexts/build_ctx_832669791/build/gen/ /mongoose-os/src/mgos_debug_udp_config.yaml /data/fwbuild-volumes/2.20.0/apps/shelly-plug-s/esp8266/build_contexts/build_ctx_832669791/build/gen/mos_conf_schema.yml
  */
 
 #pragma once
@@ -224,6 +224,13 @@ struct mgos_config_update {
   const char * key6;
   const char * key7;
   int sig_req_mask;
+  const char * url;
+  int interval;
+  const char * extra_http_headers;
+  const char * ssl_ca_file;
+  const char * ssl_client_cert_file;
+  const char * ssl_server_name;
+  int enable_post;
 };
 const struct mgos_conf_entry *mgos_config_update_get_schema(void);
 void mgos_config_update_set_defaults(struct mgos_config_update *cfg);
@@ -1693,6 +1700,76 @@ static inline int mgos_sys_config_get_update_sig_req_mask(void) { return mgos_co
 static inline int mgos_sys_config_get_default_update_sig_req_mask(void) { return mgos_config_get_default_update_sig_req_mask(); }
 void mgos_config_set_update_sig_req_mask(struct mgos_config *cfg, int v);
 static inline void mgos_sys_config_set_update_sig_req_mask(int v) { mgos_config_set_update_sig_req_mask(&mgos_sys_config, v); }
+
+/* update.url */
+#define MGOS_CONFIG_HAVE_UPDATE_URL
+#define MGOS_SYS_CONFIG_HAVE_UPDATE_URL
+const char * mgos_config_get_update_url(const struct mgos_config *cfg);
+const char * mgos_config_get_default_update_url(void);
+static inline const char * mgos_sys_config_get_update_url(void) { return mgos_config_get_update_url(&mgos_sys_config); }
+static inline const char * mgos_sys_config_get_default_update_url(void) { return mgos_config_get_default_update_url(); }
+void mgos_config_set_update_url(struct mgos_config *cfg, const char * v);
+static inline void mgos_sys_config_set_update_url(const char * v) { mgos_config_set_update_url(&mgos_sys_config, v); }
+
+/* update.interval */
+#define MGOS_CONFIG_HAVE_UPDATE_INTERVAL
+#define MGOS_SYS_CONFIG_HAVE_UPDATE_INTERVAL
+int mgos_config_get_update_interval(const struct mgos_config *cfg);
+int mgos_config_get_default_update_interval(void);
+static inline int mgos_sys_config_get_update_interval(void) { return mgos_config_get_update_interval(&mgos_sys_config); }
+static inline int mgos_sys_config_get_default_update_interval(void) { return mgos_config_get_default_update_interval(); }
+void mgos_config_set_update_interval(struct mgos_config *cfg, int v);
+static inline void mgos_sys_config_set_update_interval(int v) { mgos_config_set_update_interval(&mgos_sys_config, v); }
+
+/* update.extra_http_headers */
+#define MGOS_CONFIG_HAVE_UPDATE_EXTRA_HTTP_HEADERS
+#define MGOS_SYS_CONFIG_HAVE_UPDATE_EXTRA_HTTP_HEADERS
+const char * mgos_config_get_update_extra_http_headers(const struct mgos_config *cfg);
+const char * mgos_config_get_default_update_extra_http_headers(void);
+static inline const char * mgos_sys_config_get_update_extra_http_headers(void) { return mgos_config_get_update_extra_http_headers(&mgos_sys_config); }
+static inline const char * mgos_sys_config_get_default_update_extra_http_headers(void) { return mgos_config_get_default_update_extra_http_headers(); }
+void mgos_config_set_update_extra_http_headers(struct mgos_config *cfg, const char * v);
+static inline void mgos_sys_config_set_update_extra_http_headers(const char * v) { mgos_config_set_update_extra_http_headers(&mgos_sys_config, v); }
+
+/* update.ssl_ca_file */
+#define MGOS_CONFIG_HAVE_UPDATE_SSL_CA_FILE
+#define MGOS_SYS_CONFIG_HAVE_UPDATE_SSL_CA_FILE
+const char * mgos_config_get_update_ssl_ca_file(const struct mgos_config *cfg);
+const char * mgos_config_get_default_update_ssl_ca_file(void);
+static inline const char * mgos_sys_config_get_update_ssl_ca_file(void) { return mgos_config_get_update_ssl_ca_file(&mgos_sys_config); }
+static inline const char * mgos_sys_config_get_default_update_ssl_ca_file(void) { return mgos_config_get_default_update_ssl_ca_file(); }
+void mgos_config_set_update_ssl_ca_file(struct mgos_config *cfg, const char * v);
+static inline void mgos_sys_config_set_update_ssl_ca_file(const char * v) { mgos_config_set_update_ssl_ca_file(&mgos_sys_config, v); }
+
+/* update.ssl_client_cert_file */
+#define MGOS_CONFIG_HAVE_UPDATE_SSL_CLIENT_CERT_FILE
+#define MGOS_SYS_CONFIG_HAVE_UPDATE_SSL_CLIENT_CERT_FILE
+const char * mgos_config_get_update_ssl_client_cert_file(const struct mgos_config *cfg);
+const char * mgos_config_get_default_update_ssl_client_cert_file(void);
+static inline const char * mgos_sys_config_get_update_ssl_client_cert_file(void) { return mgos_config_get_update_ssl_client_cert_file(&mgos_sys_config); }
+static inline const char * mgos_sys_config_get_default_update_ssl_client_cert_file(void) { return mgos_config_get_default_update_ssl_client_cert_file(); }
+void mgos_config_set_update_ssl_client_cert_file(struct mgos_config *cfg, const char * v);
+static inline void mgos_sys_config_set_update_ssl_client_cert_file(const char * v) { mgos_config_set_update_ssl_client_cert_file(&mgos_sys_config, v); }
+
+/* update.ssl_server_name */
+#define MGOS_CONFIG_HAVE_UPDATE_SSL_SERVER_NAME
+#define MGOS_SYS_CONFIG_HAVE_UPDATE_SSL_SERVER_NAME
+const char * mgos_config_get_update_ssl_server_name(const struct mgos_config *cfg);
+const char * mgos_config_get_default_update_ssl_server_name(void);
+static inline const char * mgos_sys_config_get_update_ssl_server_name(void) { return mgos_config_get_update_ssl_server_name(&mgos_sys_config); }
+static inline const char * mgos_sys_config_get_default_update_ssl_server_name(void) { return mgos_config_get_default_update_ssl_server_name(); }
+void mgos_config_set_update_ssl_server_name(struct mgos_config *cfg, const char * v);
+static inline void mgos_sys_config_set_update_ssl_server_name(const char * v) { mgos_config_set_update_ssl_server_name(&mgos_sys_config, v); }
+
+/* update.enable_post */
+#define MGOS_CONFIG_HAVE_UPDATE_ENABLE_POST
+#define MGOS_SYS_CONFIG_HAVE_UPDATE_ENABLE_POST
+int mgos_config_get_update_enable_post(const struct mgos_config *cfg);
+int mgos_config_get_default_update_enable_post(void);
+static inline int mgos_sys_config_get_update_enable_post(void) { return mgos_config_get_update_enable_post(&mgos_sys_config); }
+static inline int mgos_sys_config_get_default_update_enable_post(void) { return mgos_config_get_default_update_enable_post(); }
+void mgos_config_set_update_enable_post(struct mgos_config *cfg, int v);
+static inline void mgos_sys_config_set_update_enable_post(int v) { mgos_config_set_update_enable_post(&mgos_sys_config, v); }
 
 /* rpc */
 #define MGOS_CONFIG_HAVE_RPC

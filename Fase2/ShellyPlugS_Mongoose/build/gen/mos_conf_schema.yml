@@ -288,6 +288,29 @@
   - title: Update signature requirements. If >= 0, it is used as a bitmask where bit
       0 corresponds to key 0, bit 1 to key 1, etc. All of the masked bits must be
       set, i.e. if sig_req is 3, update must be signed by both key 0 and key 1.
+- - update.url
+  - s
+  - title: Fetch updates from here
+- - update.interval
+  - i
+  - title: Check for updates this often
+- - update.extra_http_headers
+  - s
+  - title: Extra HTTP request headers
+- - update.ssl_ca_file
+  - s
+  - ca.pem
+  - title: TLS CA file
+- - update.ssl_client_cert_file
+  - s
+  - title: TLS client cert file
+- - update.ssl_server_name
+  - s
+  - title: TLS Server Name
+- - update.enable_post
+  - b
+  - true
+  - title: Enable POST updates
 - - rpc
   - o
   - title: RPC settings

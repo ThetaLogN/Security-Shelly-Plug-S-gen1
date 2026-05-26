@@ -48,6 +48,24 @@ libs:
   - name: libota-common-esp8266-2.20.0.a
     size: 762238
     cs_sha256: b5eab61dd4524d09aff3c443bae7bafbd532e866fc2318234bcda90d44d8ccd5
+- name: ota-http-client
+  location: https://github.com/mongoose-os-libs/ota-http-client
+  version: 2.20.0
+  user_version: 1.0.1
+  repo_version: d6088c559c603f74a645a8b0dff135723c994f2d
+  blobs:
+  - name: libota-http-client-esp8266-2.20.0.a
+    size: 244832
+    cs_sha256: d79b675ef3f7df0a91873b058dbe08cda0a2e4c8bb7ec0a9ca869d284b8a046c
+- name: ota-http-server
+  location: https://github.com/mongoose-os-libs/ota-http-server
+  version: 2.20.0
+  user_version: "1.0"
+  repo_version: 6adb6f6bf66390a6adf7defb2f85c1f7d3aaea60
+  blobs:
+  - name: libota-http-server-esp8266-2.20.0.a
+    size: 238920
+    cs_sha256: 96d7e1425ea3f935e073933fdda29409d07aaf447d1ea4443d4829c49a24d7b7
 - name: rpc-common
   location: https://github.com/mongoose-os-libs/rpc-common
   version: 2.20.0

@@ -20,6 +20,8 @@ extern bool mgos_wifi_init(void);
 extern bool mgos_http_server_init(void);
 extern bool mgos_mbedtls_init(void);
 extern bool mgos_mqtt_init(void);
+extern bool mgos_ota_http_client_init(void);
+extern bool mgos_ota_http_server_init(void);
 extern bool mgos_rpc_common_init(void);
 extern bool mgos_rpc_service_config_init(void);
 extern bool mgos_rpc_service_fs_init(void);
@@ -136,6 +138,20 @@ const struct mgos_lib_info mgos_libs_info[] = {
     {.name = "mqtt", .version = "1.0", .init = mgos_mqtt_init},
 #else
     {.name = "mqtt", .version = "1.0", .repo_version = "f578d546d70844fdddd1809030d3fe44d11e6d9b", .binary_libs = NULL, .init = mgos_mqtt_init},
+#endif
+
+    // "ota-http-client". deps: [ "core" "ota-common" ]
+#if MGOS_LIB_INFO_VERSION == 1
+    {.name = "ota-http-client", .version = "1.0.1", .init = mgos_ota_http_client_init},
+#else
+    {.name = "ota-http-client", .version = "1.0.1", .repo_version = "d6088c559c603f74a645a8b0dff135723c994f2d", .binary_libs = "libota-http-client-esp8266-2.20.0.a:64373962363735656633663764663061393138373362303538646265303863646130613265346338626237656330613963613836396432383462386130343663", .init = mgos_ota_http_client_init},
+#endif
+
+    // "ota-http-server". deps: [ "core" "http-server" "ota-common" "ota-http-client" ]
+#if MGOS_LIB_INFO_VERSION == 1
+    {.name = "ota-http-server", .version = "1.0", .init = mgos_ota_http_server_init},
+#else
+    {.name = "ota-http-server", .version = "1.0", .repo_version = "6adb6f6bf66390a6adf7defb2f85c1f7d3aaea60", .binary_libs = "libota-http-server-esp8266-2.20.0.a:39366437653134323565613366393335653037333933336664646132393430396430376161663434376431656134343433643438323963343961323464376237", .init = mgos_ota_http_server_init},
 #endif
 
     // "rpc-common". deps: [ "core" "http-server" "mongoose" ]
