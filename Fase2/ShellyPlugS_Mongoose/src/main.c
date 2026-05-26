@@ -32,11 +32,16 @@ const double BETA_COEFFICIENT = 3350.0;
 static volatile uint32_t cf_pulse_count = 0;
 static volatile uint32_t cf1_pulse_count = 0;
 static volatile uint32_t last_cf_time = 0;
-static volatile uint32_t last_cf1_time = 0;
 static volatile uint32_t cf_period = 0;
-static volatile uint32_t cf1_period = 0;
 
-// static double current_multiplier = 431086.01;
+static bool is_voltage_mode = false;
+static volatile uint32_t cf1_voltage_period = 0;
+static volatile uint32_t cf1_current_period = 0;
+static volatile uint32_t last_cf1_voltage_time = 0;
+static volatile uint32_t last_cf1_current_time = 0;
+
+static double current_multiplier = 431086.01;
+static double voltage_multiplier = 888.07;
 static double power_multiplier = 4.80;
 
 static float last_correct_power = 0.0;
@@ -54,22 +59,46 @@ static void cf_int_handler(int pin, void *arg) {
 
 static void cf1_int_handler(int pin, void *arg) {
   uint32_t now = mgos_uptime_micros();
-  if (last_cf1_time > 0 && now > last_cf1_time) {
-    cf1_period = now - last_cf1_time;
+  if (is_voltage_mode) {
+    if (last_cf1_voltage_time > 0 && now > last_cf1_voltage_time) {
+      cf1_voltage_period = now - last_cf1_voltage_time;
+    }
+    last_cf1_voltage_time = now;
+  } else {
+    if (last_cf1_current_time > 0 && now > last_cf1_current_time) {
+      cf1_current_period = now - last_cf1_current_time;
+    }
+    last_cf1_current_time = now;
   }
-  last_cf1_time = now;
   cf1_pulse_count++;
   (void) pin;
   (void) arg;
 }
 
+static void sel_toggle_timer_cb(void *arg) {
+  is_voltage_mode = !is_voltage_mode;
+  mgos_gpio_write(SEL_PIN, is_voltage_mode ? 1 : 0);
+  (void) arg;
+}
+
 static float get_voltage() {
-  return 230.0;
+  uint32_t now = mgos_uptime_micros();
+  if (last_cf1_voltage_time == 0 || (now - last_cf1_voltage_time) > 4000000) {
+    cf1_voltage_period = 0;
+    return 0.0;
+  }
+  if (cf1_voltage_period == 0) return 0.0;
+  return (float) ((voltage_multiplier * 1000000.0) / cf1_voltage_period);
 }
 
 static float get_current() {
-  float power = get_power();
-  return power / 230.0;
+  uint32_t now = mgos_uptime_micros();
+  if (last_cf1_current_time == 0 || (now - last_cf1_current_time) > 4000000) {
+    cf1_current_period = 0;
+    return 0.0;
+  }
+  if (cf1_current_period == 0) return 0.0;
+  return (float) (current_multiplier / cf1_current_period);
 }
 
 static float get_power() {
@@ -488,6 +517,14 @@ static void publish_energy() {
   snprintf(topic, sizeof(topic), "shellies/%s/temperature", dev_id);
   snprintf(buf, sizeof(buf), "%.1f", temp);
   mgos_mqtt_pub(topic, buf, strlen(buf), 1, false);
+
+  snprintf(topic, sizeof(topic), "shellies/%s/voltage", dev_id);
+  snprintf(buf, sizeof(buf), "%.2f", voltage);
+  mgos_mqtt_pub(topic, buf, strlen(buf), 1, false);
+
+  snprintf(topic, sizeof(topic), "shellies/%s/current", dev_id);
+  snprintf(buf, sizeof(buf), "%.3f", current);
+  mgos_mqtt_pub(topic, buf, strlen(buf), 1, false);
 }
 
 static void send_udp_telemetry(void *arg) {
@@ -590,6 +627,7 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_mqtt_add_global_handler(mqtt_ev_handler, NULL);
   
   // Timers
+  mgos_set_timer(2000, MGOS_TIMER_REPEAT, sel_toggle_timer_cb, NULL);
   mgos_set_timer(60000, MGOS_TIMER_REPEAT, timer_cb, NULL);
   
   // Commit firmware update to prevent Mongoose OS rollback on restart
