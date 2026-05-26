@@ -1,7 +1,7 @@
 /* clang-format off */
 /*
  * Generated file - do not edit.
- * Command: /mongoose-os/tools/mgos_gen_config.py --c_name=mgos_ro_vars --c_global_name=mgos_sys_ro_vars --dest_dir=/data/fwbuild-volumes/2.20.0/apps/shelly-plug-s/esp8266/build_contexts/build_ctx_832669791/build/gen/ /mongoose-os/src/mgos_ro_vars_schema.yaml
+ * Command: /mongoose-os/tools/mgos_gen_config.py --c_name=mgos_ro_vars --c_global_name=mgos_sys_ro_vars --dest_dir=/data/fwbuild-volumes/2.20.0/apps/shelly-plug-s/esp8266/build_contexts/build_ctx_120699422/build/gen/ /mongoose-os/src/mgos_ro_vars_schema.yaml
  */
 
 #pragma once

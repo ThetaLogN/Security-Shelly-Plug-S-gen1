@@ -12,6 +12,7 @@
 #include <math.h>
 
 extern bool mgos_ota_commit(void);
+static float get_power(void);
 
 #define RELAY_PIN 15
 #define SEL_PIN 12
@@ -35,9 +36,8 @@ static volatile uint32_t last_cf1_time = 0;
 static volatile uint32_t cf_period = 0;
 static volatile uint32_t cf1_period = 0;
 
-// static double voltage_multiplier = 888.07;
-static double current_multiplier = 431086.01;
-static double power_multiplier = 930.0;
+// static double current_multiplier = 431086.01;
+static double power_multiplier = 4.80;
 
 static float last_correct_power = 0.0;
 
@@ -68,14 +68,8 @@ static float get_voltage() {
 }
 
 static float get_current() {
-  uint32_t now = mgos_uptime_micros();
-  if (last_cf1_time == 0 || (now - last_cf1_time) > 2000000) {
-    cf1_period = 0;
-    return 0.0;
-  }
-  if (cf1_period == 0) return 0.0;
-  float freq = 1000000.0 / cf1_period;
-  return freq * current_multiplier;
+  float power = get_power();
+  return power / 230.0;
 }
 
 static float get_power() {
@@ -371,6 +365,81 @@ static void api_reset_cb(struct mg_connection *nc, int ev, void *ev_data, void *
   (void) user_data;
 }
 
+static void api_ota_page_cb(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
+  if (ev != MG_EV_HTTP_REQUEST) return;
+  
+  mg_printf(nc,
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/html\r\n"
+            "Connection: close\r\n\r\n"
+            "<!DOCTYPE html>\n"
+            "<html>\n"
+            "<head>\n"
+            "  <meta charset=\"utf-8\">\n"
+            "  <title>OTA Update</title>\n"
+            "  <style>\n"
+            "    body { background-color: #212529; color: #fff; font-family: sans-serif; text-align: center; padding: 50px; }\n"
+            "    .box { border: 2px dashed #00adef; padding: 40px; border-radius: 8px; display: inline-block; width: 400px; background: #1a1d20; }\n"
+            "    input[type=file] { margin: 20px 0; color: #ccc; }\n"
+            "    button { background: #00adef; color: #fff; border: none; padding: 12px 24px; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 13px; }\n"
+            "    button:hover { background: #0096d1; }\n"
+            "    .status { margin-top: 20px; font-weight: bold; font-size: 14px; }\n"
+            "    .btn-back { margin-top: 20px; display: inline-block; color: #a0a0a0; text-decoration: none; font-size: 12px; }\n"
+            "    .btn-back:hover { color: #fff; }\n"
+            "  </style>\n"
+            "</head>\n"
+            "<body>\n"
+            "  <div class=\"box\">\n"
+            "    <h2 style=\"color: #00adef; margin-top: 0;\">Aggiornamento Firmware</h2>\n"
+            "    <p>Seleziona l'archivio <strong>fw.zip</strong> per caricare il nuovo firmware.</p>\n"
+            "    <form id=\"uploadForm\">\n"
+            "      <input type=\"file\" id=\"fileInput\" name=\"filedata\" accept=\".zip\" required><br><br>\n"
+            "      <button type=\"submit\" id=\"btnSubmit\">Carica & Aggiorna</button>\n"
+            "    </form>\n"
+            "    <div id=\"status\" class=\"status\"></div>\n"
+            "    <a href=\"/\" class=\"btn-back\">&larr; Torna alla pagina principale</a>\n"
+            "  </div>\n"
+            "  <script>\n"
+            "    document.getElementById('uploadForm').addEventListener('submit', function(e) {\n"
+            "      e.preventDefault();\n"
+            "      const fileInput = document.getElementById('fileInput');\n"
+            "      if (fileInput.files.length === 0) return;\n"
+            "      const btn = document.getElementById('btnSubmit');\n"
+            "      const status = document.getElementById('status');\n"
+            "      btn.disabled = true;\n"
+            "      btn.innerText = 'Caricamento...';\n"
+            "      status.innerText = 'Caricamento in corso. Lo Shelly si riavvierà automaticamente...';\n"
+            "      status.style.color = '#00adef';\n"
+            "      const formData = new FormData();\n"
+            "      formData.append('filedata', fileInput.files[0]);\n"
+            "      fetch('/update', {\n"
+            "        method: 'POST',\n"
+            "        body: formData\n"
+            "      })\n"
+            "      .then(response => {\n"
+            "        if (response.ok) {\n"
+            "          status.innerText = 'Caricamento completato! Riavvio in corso... attendi 15-20 secondi e ricarica la pagina principale.';\n"
+            "          status.style.color = '#28a745';\n"
+            "        } else {\n"
+            "          status.innerText = 'Errore durante l\\'aggiornamento. Riprova.';\n"
+            "          status.style.color = '#dc3545';\n"
+            "          btn.disabled = false;\n"
+            "          btn.innerText = 'Carica & Aggiorna';\n"
+            "        }\n"
+            "      })\n"
+            "      .catch(() => {\n"
+            "        status.innerText = 'Connessione persa (Riavvio in corso...). Ricarica la home tra 15 secondi.';\n"
+            "        status.style.color = '#28a745';\n"
+            "      });\n"
+            "    });\n"
+            "  </script>\n"
+            "</body>\n"
+            "</html>\n");
+  nc->flags |= MG_F_SEND_AND_CLOSE;
+  (void) ev_data;
+  (void) user_data;
+}
+
 // --- Telemetry ---
 static void publish_status() {
   if (!mgos_mqtt_global_is_connected()) return;
@@ -515,6 +584,7 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_register_http_endpoint("/api/mqtt", api_mqtt_cb, NULL);
   mgos_register_http_endpoint("/reboot", api_reboot_cb, NULL);
   mgos_register_http_endpoint("/reset", api_reset_cb, NULL);
+  mgos_register_http_endpoint("/ota", api_ota_page_cb, NULL);
   
   // MQTT Event Handler
   mgos_mqtt_add_global_handler(mqtt_ev_handler, NULL);
