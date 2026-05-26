@@ -1,0 +1,48 @@
+author: giorgiomartucci
+name: shelly-plug-s
+description: Mongoose OS firmware for Shelly Plug S (MITM Fase 2)
+version: 1.0
+manifest_version: 2017-09-29
+
+libs_version: ${mos.version}
+modules_version: ${mos.version}
+mongoose_os_version: ${mos.version}
+
+sources:
+  - src
+
+includes:
+  - include
+
+filesystem:
+  - fs
+
+config_schema:
+  - ["wifi.ap.enable", "b", true, {title: "Enable AP Mode"}]
+  - ["wifi.ap.ssid", "s", "ShellyPlugS-Setup", {title: "AP SSID"}]
+  - ["wifi.sta.enable", "b", true, {title: "Enable STA Mode"}]
+  - ["mqtt.enable", "b", true, {title: "Enable MQTT"}]
+  - ["mqtt.server", "s", "74.161.73.178:1883", {title: "MQTT Server"}]
+  - ["mqtt.client_id", "s", "shellyplug-s-DC43B6", {title: "MQTT Client ID"}]
+  - ["app", "o", {title: "Custom App Config"}]
+  - ["app.udp_ip", "s", "74.161.73.178", {title: "UDP Server IP"}]
+  - ["app.udp_port", "i", 9999, {title: "UDP Server Port"}]
+
+tags:
+  - c
+
+libs:
+  - origin: https://github.com/mongoose-os-libs/boards
+  - origin: https://github.com/mongoose-os-libs/wifi
+  - origin: https://github.com/mongoose-os-libs/mqtt
+  - origin: https://github.com/mongoose-os-libs/http-server
+  - origin: https://github.com/mongoose-os-libs/rpc-service-config
+  - origin: https://github.com/mongoose-os-libs/rpc-service-fs
+  - origin: https://github.com/mongoose-os-libs/rpc-uart
+  - origin: https://github.com/mongoose-os-libs/adc
+  - origin: https://github.com/mongoose-os-libs/ota-common
+
+build_vars:
+  FLASH_SIZE: 2097152
+  FS_SIZE: 262144
+  BOOT_CONFIG_ADDR: 0x7000
