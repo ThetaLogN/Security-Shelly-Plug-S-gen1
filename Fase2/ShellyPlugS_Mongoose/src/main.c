@@ -39,10 +39,10 @@ static volatile uint32_t cf1_voltage_period = 0;
 static volatile uint32_t cf1_current_period = 0;
 static volatile uint32_t last_cf1_voltage_time = 0;
 static volatile uint32_t last_cf1_current_time = 0;
+static volatile uint32_t last_toggle_time = 0;
 
-static double voltage_multiplier = 431086.01;
-static double current_multiplier = 888.07;
-static double power_multiplier = 4.80;
+static double voltage_multiplier = 888.07;
+static double current_multiplier = 2.50;
 
 static float last_correct_power = 0.0;
 
@@ -59,14 +59,38 @@ static void cf_int_handler(int pin, void *arg) {
 
 static void cf1_int_handler(int pin, void *arg) {
   uint32_t now = mgos_uptime_micros();
+
+  // Discard transient pulses during HLW8012 stabilization period (500 ms)
+  if (now - last_toggle_time < 500000) {
+    (void)pin;
+    (void)arg;
+    return;
+  }
+
   if (is_voltage_mode) {
-    if (last_cf1_voltage_time > 0 && now > last_cf1_voltage_time) {
-      cf1_voltage_period = now - last_cf1_voltage_time;
+    if (last_cf1_voltage_time >= last_toggle_time) {
+      if (now > last_cf1_voltage_time) {
+        uint32_t period = now - last_cf1_voltage_time;
+        if (cf1_voltage_period == 0) {
+          cf1_voltage_period = period;
+        } else {
+          // Smooth out fluctuations using Exponential Moving Average (EMA)
+          cf1_voltage_period = (cf1_voltage_period * 8 + period * 2) / 10;
+        }
+      }
     }
     last_cf1_voltage_time = now;
   } else {
-    if (last_cf1_current_time > 0 && now > last_cf1_current_time) {
-      cf1_current_period = now - last_cf1_current_time;
+    if (last_cf1_current_time >= last_toggle_time) {
+      if (now > last_cf1_current_time) {
+        uint32_t period = now - last_cf1_current_time;
+        if (cf1_current_period == 0) {
+          cf1_current_period = period;
+        } else {
+          // Smooth out fluctuations using Exponential Moving Average (EMA)
+          cf1_current_period = (cf1_current_period * 8 + period * 2) / 10;
+        }
+      }
     }
     last_cf1_current_time = now;
   }
@@ -77,7 +101,8 @@ static void cf1_int_handler(int pin, void *arg) {
 
 static void sel_toggle_timer_cb(void *arg) {
   is_voltage_mode = !is_voltage_mode;
-  mgos_gpio_write(SEL_PIN, is_voltage_mode ? 1 : 0);
+  mgos_gpio_write(SEL_PIN, is_voltage_mode ? 0 : 1);
+  last_toggle_time = mgos_uptime_micros();
   (void)arg;
 }
 
@@ -103,17 +128,7 @@ static float get_current() {
   return (float)(current_multiplier / (cf1_current_period * 2.0));
 }
 
-static float get_power() {
-  uint32_t now = mgos_uptime_micros();
-  if (last_cf_time == 0 || (now - last_cf_time) > 2000000) {
-    cf_period = 0;
-    return 0.0;
-  }
-  if (cf_period == 0)
-    return 0.0;
-  float freq = 1000000.0 / cf_period;
-  return freq * power_multiplier;
-}
+static float get_power() { return get_voltage() * get_current(); }
 
 static float get_valid_power(float voltage, float current, bool relay_on) {
   float calc_power = get_power();
@@ -658,7 +673,9 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_gpio_set_mode(CF_PIN, MGOS_GPIO_MODE_INPUT);
   mgos_gpio_set_mode(CF1_PIN, MGOS_GPIO_MODE_INPUT);
   mgos_gpio_set_mode(SEL_PIN, MGOS_GPIO_MODE_OUTPUT);
-  mgos_gpio_write(SEL_PIN, 0); // Current mode
+  mgos_gpio_write(SEL_PIN,
+                  1); // Current mode (SEL HIGH = current per datasheet)
+  last_toggle_time = mgos_uptime_micros();
 
   mgos_gpio_set_int_handler(CF_PIN, MGOS_GPIO_INT_EDGE_ANY, cf_int_handler,
                             NULL);
