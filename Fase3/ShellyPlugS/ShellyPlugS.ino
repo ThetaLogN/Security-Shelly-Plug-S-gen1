@@ -616,9 +616,6 @@ void setupTLS() {
   wifiClientSecure.setTrustAnchors(&caCert);
   wifiClientSecure.setClientECCert(&clientCert, &clientKey, BR_KEYTYPE_SIGN,
                                    BR_KEYTYPE_EC);
-
-  // Buffer TLS: rx=4096 (necessario per handshake), tx=512 (sufficiente per
-  // MQTT)
   wifiClientSecure.setBufferSizes(4096, 512);
 
   sysLog("[TLS] Certificati CA + Client caricati (mTLS)\n");
