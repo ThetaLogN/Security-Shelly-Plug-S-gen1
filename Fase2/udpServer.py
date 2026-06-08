@@ -54,7 +54,7 @@ while True:
             except Exception as e:
                 print(f"  [DB] Errore durante il salvataggio: {e}")
 
-        # Salvataggio su CSV (passo passo)
+        # Salvataggio su CSV 
         try:
             timestamp_str = datetime.now(timezone.utc).isoformat()
             
