@@ -1,14 +1,14 @@
+#include "frozen.h"
 #include "mgos.h"
 #include "mgos_adc.h"
 #include "mgos_gpio.h"
 #include "mgos_http_server.h"
 #include "mgos_mqtt.h"
+#include "mgos_net.h"
 #include "mgos_ro_vars.h"
 #include "mgos_sys_config.h"
-#include "mgos_timers.h"
-#include "mgos_net.h"
 #include "mgos_system.h"
-#include "frozen.h"
+#include "mgos_timers.h"
 #include <math.h>
 
 extern bool mgos_ota_commit(void);
@@ -40,8 +40,8 @@ static volatile uint32_t cf1_current_period = 0;
 static volatile uint32_t last_cf1_voltage_time = 0;
 static volatile uint32_t last_cf1_current_time = 0;
 
-static double current_multiplier = 431086.01;
-static double voltage_multiplier = 888.07;
+static double voltage_multiplier = 431086.01;
+static double current_multiplier = 888.07;
 static double power_multiplier = 4.80;
 
 static float last_correct_power = 0.0;
@@ -53,8 +53,8 @@ static void cf_int_handler(int pin, void *arg) {
   }
   last_cf_time = now;
   cf_pulse_count++;
-  (void) pin;
-  (void) arg;
+  (void)pin;
+  (void)arg;
 }
 
 static void cf1_int_handler(int pin, void *arg) {
@@ -71,14 +71,14 @@ static void cf1_int_handler(int pin, void *arg) {
     last_cf1_current_time = now;
   }
   cf1_pulse_count++;
-  (void) pin;
-  (void) arg;
+  (void)pin;
+  (void)arg;
 }
 
 static void sel_toggle_timer_cb(void *arg) {
   is_voltage_mode = !is_voltage_mode;
   mgos_gpio_write(SEL_PIN, is_voltage_mode ? 1 : 0);
-  (void) arg;
+  (void)arg;
 }
 
 static float get_voltage() {
@@ -87,8 +87,9 @@ static float get_voltage() {
     cf1_voltage_period = 0;
     return 0.0;
   }
-  if (cf1_voltage_period == 0) return 0.0;
-  return (float) ((voltage_multiplier * 1000000.0) / cf1_voltage_period);
+  if (cf1_voltage_period == 0)
+    return 0.0;
+  return (float)(voltage_multiplier / (cf1_voltage_period * 2.0));
 }
 
 static float get_current() {
@@ -97,8 +98,9 @@ static float get_current() {
     cf1_current_period = 0;
     return 0.0;
   }
-  if (cf1_current_period == 0) return 0.0;
-  return (float) (current_multiplier / cf1_current_period);
+  if (cf1_current_period == 0)
+    return 0.0;
+  return (float)(current_multiplier / (cf1_current_period * 2.0));
 }
 
 static float get_power() {
@@ -107,7 +109,8 @@ static float get_power() {
     cf_period = 0;
     return 0.0;
   }
-  if (cf_period == 0) return 0.0;
+  if (cf_period == 0)
+    return 0.0;
   float freq = 1000000.0 / cf_period;
   return freq * power_multiplier;
 }
@@ -126,11 +129,15 @@ static float get_valid_power(float voltage, float current, bool relay_on) {
 
 static double get_real_temperature() {
   int rawADC = mgos_adc_read(ANALOG_PIN);
-  if (rawADC >= 1023) return -273.0;
-  if (rawADC <= 0) return 999.0;
-  
+  if (rawADC >= 1023)
+    return -273.0;
+  if (rawADC <= 0)
+    return 999.0;
+
   double R_ntc = ((double)rawADC * R_PULLUP) / (1024.0 - (double)rawADC);
-  double steinhart = (double)BETA_COEFFICIENT / ((BETA_COEFFICIENT / (TEMP_NOMINAL + 273.15)) + log(R_ntc / R_NTC_NOMINAL));
+  double steinhart =
+      (double)BETA_COEFFICIENT / ((BETA_COEFFICIENT / (TEMP_NOMINAL + 273.15)) +
+                                  log(R_ntc / R_NTC_NOMINAL));
   steinhart -= 273.15;
   return steinhart;
 }
@@ -145,22 +152,24 @@ static void set_relay(bool state) {
 static void btn_cb(int pin, void *arg) {
   bool current_state = mgos_gpio_read(RELAY_PIN);
   set_relay(!current_state);
-  (void) pin;
-  (void) arg;
+  (void)pin;
+  (void)arg;
 }
 
 // --- Web Endpoints ---
-static void api_status_cb(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
-  if (ev != MG_EV_HTTP_REQUEST) return;
-  struct http_message *hm = (struct http_message *) ev_data;
-  
+static void api_status_cb(struct mg_connection *nc, int ev, void *ev_data,
+                          void *user_data) {
+  if (ev != MG_EV_HTTP_REQUEST)
+    return;
+  struct http_message *hm = (struct http_message *)ev_data;
+
   bool ison = mgos_gpio_read(RELAY_PIN);
   float voltage = get_voltage();
   float current = get_current();
   float power = get_valid_power(voltage, current, ison);
   float temp = get_real_temperature();
   int uptime = (int)mgos_uptime();
-  
+
   char ip[16] = "";
   struct mgos_net_ip_info ip_info;
   if (mgos_net_get_ip_info(MGOS_NET_IF_TYPE_WIFI, 0, &ip_info)) {
@@ -171,61 +180,72 @@ static void api_status_cb(struct mg_connection *nc, int ev, void *ev_data, void 
       mgos_net_ip_to_str(&ip_info.ip, ip);
     }
   }
-  
+
   mg_printf(nc,
             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
-            "{\"ison\":%s,\"voltage\":%.2f,\"current\":%.3f,\"power\":%.2f,\"temp\":%.1f,\"uptime\":%d,\"ip\":\"%s\"}",
+            "{\"ison\":%s,\"voltage\":%.2f,\"current\":%.3f,\"power\":%.2f,"
+            "\"temp\":%.1f,\"uptime\":%d,\"ip\":\"%s\"}",
             ison ? "true" : "false", voltage, current, power, temp, uptime, ip);
   nc->flags |= MG_F_SEND_AND_CLOSE;
-  (void) user_data;
-  (void) hm;
+  (void)user_data;
+  (void)hm;
 }
 
-static void api_relay_cb(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
-  if (ev != MG_EV_HTTP_REQUEST) return;
-  struct http_message *hm = (struct http_message *) ev_data;
-  
+static void api_relay_cb(struct mg_connection *nc, int ev, void *ev_data,
+                         void *user_data) {
+  if (ev != MG_EV_HTTP_REQUEST)
+    return;
+  struct http_message *hm = (struct http_message *)ev_data;
+
   char turn[10];
   if (mg_get_http_var(&hm->query_string, "turn", turn, sizeof(turn)) > 0) {
-    if (strcmp(turn, "on") == 0) set_relay(true);
-    else if (strcmp(turn, "off") == 0) set_relay(false);
-    else if (strcmp(turn, "toggle") == 0) set_relay(!mgos_gpio_read(RELAY_PIN));
+    if (strcmp(turn, "on") == 0)
+      set_relay(true);
+    else if (strcmp(turn, "off") == 0)
+      set_relay(false);
+    else if (strcmp(turn, "toggle") == 0)
+      set_relay(!mgos_gpio_read(RELAY_PIN));
   }
-  
+
   bool ison = mgos_gpio_read(RELAY_PIN);
   float power = get_power();
-  
+
   mg_printf(nc,
             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
             "{\"ison\":%s,\"power\":%.2f}",
             ison ? "true" : "false", power);
   nc->flags |= MG_F_SEND_AND_CLOSE;
-  (void) user_data;
+  (void)user_data;
 }
 
-static void api_config_cb(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
-  if (ev != MG_EV_HTTP_REQUEST) return;
-  mg_printf(nc,
-            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
-            "{\"mqtt_server\":\"%s\",\"mqtt_port\":\"1883\",\"device_id\":\"%s\",\"udp_ip\":\"%s\",\"udp_port\":\"%d\"}",
-            mgos_sys_config_get_mqtt_server(),
-            mgos_sys_config_get_mqtt_client_id(),
-            mgos_sys_config_get_app_udp_ip(),
-            mgos_sys_config_get_app_udp_port());
+static void api_config_cb(struct mg_connection *nc, int ev, void *ev_data,
+                          void *user_data) {
+  if (ev != MG_EV_HTTP_REQUEST)
+    return;
+  mg_printf(
+      nc,
+      "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
+      "{\"mqtt_server\":\"%s\",\"mqtt_port\":\"1883\",\"device_id\":\"%s\","
+      "\"udp_ip\":\"%s\",\"udp_port\":\"%d\"}",
+      mgos_sys_config_get_mqtt_server(), mgos_sys_config_get_mqtt_client_id(),
+      mgos_sys_config_get_app_udp_ip(), mgos_sys_config_get_app_udp_port());
   nc->flags |= MG_F_SEND_AND_CLOSE;
-  (void) ev_data;
-  (void) user_data;
+  (void)ev_data;
+  (void)user_data;
 }
 
-static void api_wifi_cb(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
-  if (ev != MG_EV_HTTP_REQUEST) return;
-  struct http_message *hm = (struct http_message *) ev_data;
-  
+static void api_wifi_cb(struct mg_connection *nc, int ev, void *ev_data,
+                        void *user_data) {
+  if (ev != MG_EV_HTTP_REQUEST)
+    return;
+  struct http_message *hm = (struct http_message *)ev_data;
+
   char *ssid = NULL;
   char *pass = NULL;
-  
-  int num_parsed = json_scanf(hm->body.p, hm->body.len, "{ssid: %Q, pass: %Q}", &ssid, &pass);
-  
+
+  int num_parsed = json_scanf(hm->body.p, hm->body.len, "{ssid: %Q, pass: %Q}",
+                              &ssid, &pass);
+
   if (num_parsed > 0 && ssid != NULL) {
     mgos_sys_config_set_wifi_sta_ssid(ssid);
     if (pass != NULL) {
@@ -234,265 +254,299 @@ static void api_wifi_cb(struct mg_connection *nc, int ev, void *ev_data, void *u
       mgos_sys_config_set_wifi_sta_pass("");
     }
     mgos_sys_config_set_wifi_sta_enable(true);
-    
+
     char *err = NULL;
     bool save_res = mgos_sys_config_save(&mgos_sys_config, false, &err);
     if (save_res) {
-      mg_printf(nc,
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
-                "{\"msg\":\"WiFi salvato! Riconnessione...\"}");
+      mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
+                    "{\"msg\":\"WiFi salvato! Riconnessione...\"}");
       mgos_system_restart_after(2000);
     } else {
       mg_printf(nc,
-                "HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\n\r\n"
-                "{\"msg\":\"Errore salvataggio config: %s\"}", err ? err : "sconosciuto");
+                "HTTP/1.1 500 Internal Server Error\r\nContent-Type: "
+                "application/json\r\n\r\n"
+                "{\"msg\":\"Errore salvataggio config: %s\"}",
+                err ? err : "sconosciuto");
       free(err);
     }
   } else {
-    mg_printf(nc,
-              "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n"
-              "{\"msg\":\"SSID non valido o mancante\"}");
+    mg_printf(
+        nc, "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n"
+            "{\"msg\":\"SSID non valido o mancante\"}");
   }
-  
+
   free(ssid);
   free(pass);
   nc->flags |= MG_F_SEND_AND_CLOSE;
-  (void) user_data;
-  (void) hm;
+  (void)user_data;
+  (void)hm;
 }
 
-static void api_udp_cb(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
-  if (ev != MG_EV_HTTP_REQUEST) return;
-  struct http_message *hm = (struct http_message *) ev_data;
-  
+static void api_udp_cb(struct mg_connection *nc, int ev, void *ev_data,
+                       void *user_data) {
+  if (ev != MG_EV_HTTP_REQUEST)
+    return;
+  struct http_message *hm = (struct http_message *)ev_data;
+
   char *ip = NULL;
   char *port_str = NULL;
   int port = -1;
-  
-  int num_parsed = json_scanf(hm->body.p, hm->body.len, "{ip: %Q, port: %Q}", &ip, &port_str);
+
+  int num_parsed = json_scanf(hm->body.p, hm->body.len, "{ip: %Q, port: %Q}",
+                              &ip, &port_str);
   if (num_parsed == 2 && port_str != NULL) {
     port = atoi(port_str);
   } else {
     // try parsing port as number
     json_scanf(hm->body.p, hm->body.len, "{port: %d}", &port);
   }
-  
+
   if (ip != NULL && port != -1) {
     mgos_sys_config_set_app_udp_ip(ip);
     mgos_sys_config_set_app_udp_port(port);
-    
+
     char *err = NULL;
     bool save_res = mgos_sys_config_save(&mgos_sys_config, false, &err);
     if (save_res) {
-      mg_printf(nc,
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
-                "{\"msg\":\"UDP aggiornato!\"}");
+      mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
+                    "{\"msg\":\"UDP aggiornato!\"}");
     } else {
       mg_printf(nc,
-                "HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\n\r\n"
-                "{\"msg\":\"Errore salvataggio config: %s\"}", err ? err : "sconosciuto");
+                "HTTP/1.1 500 Internal Server Error\r\nContent-Type: "
+                "application/json\r\n\r\n"
+                "{\"msg\":\"Errore salvataggio config: %s\"}",
+                err ? err : "sconosciuto");
       free(err);
     }
   } else {
-    mg_printf(nc,
-              "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n"
-              "{\"msg\":\"Dati UDP non validi o mancanti\"}");
+    mg_printf(
+        nc, "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n"
+            "{\"msg\":\"Dati UDP non validi o mancanti\"}");
   }
-  
+
   free(ip);
   free(port_str);
   nc->flags |= MG_F_SEND_AND_CLOSE;
-  (void) user_data;
-  (void) hm;
+  (void)user_data;
+  (void)hm;
 }
 
-static void api_mqtt_cb(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
-  if (ev != MG_EV_HTTP_REQUEST) return;
-  struct http_message *hm = (struct http_message *) ev_data;
-  
+static void api_mqtt_cb(struct mg_connection *nc, int ev, void *ev_data,
+                        void *user_data) {
+  if (ev != MG_EV_HTTP_REQUEST)
+    return;
+  struct http_message *hm = (struct http_message *)ev_data;
+
   char *server = NULL;
   char *port_str = NULL;
   char *devid = NULL;
   int port = 1883;
-  
-  int num_parsed = json_scanf(hm->body.p, hm->body.len, "{server: %Q, port: %Q, devid: %Q}", &server, &port_str, &devid);
+
+  int num_parsed =
+      json_scanf(hm->body.p, hm->body.len, "{server: %Q, port: %Q, devid: %Q}",
+                 &server, &port_str, &devid);
   if (num_parsed < 3) {
     // try port as integer
     json_scanf(hm->body.p, hm->body.len, "{port: %d}", &port);
   } else if (port_str != NULL) {
     port = atoi(port_str);
   }
-  
+
   if (server != NULL && devid != NULL) {
     char server_addr[128];
     snprintf(server_addr, sizeof(server_addr), "%s:%d", server, port);
-    
+
     mgos_sys_config_set_mqtt_server(server_addr);
     mgos_sys_config_set_mqtt_client_id(devid);
     mgos_sys_config_set_mqtt_enable(true);
-    
+
     char *err = NULL;
     bool save_res = mgos_sys_config_save(&mgos_sys_config, false, &err);
     if (save_res) {
-      mg_printf(nc,
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
-                "{\"msg\":\"MQTT aggiornato! Riavvio consigliato.\"}");
+      mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
+                    "{\"msg\":\"MQTT aggiornato! Riavvio consigliato.\"}");
     } else {
       mg_printf(nc,
-                "HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\n\r\n"
-                "{\"msg\":\"Errore salvataggio config: %s\"}", err ? err : "sconosciuto");
+                "HTTP/1.1 500 Internal Server Error\r\nContent-Type: "
+                "application/json\r\n\r\n"
+                "{\"msg\":\"Errore salvataggio config: %s\"}",
+                err ? err : "sconosciuto");
       free(err);
     }
   } else {
-    mg_printf(nc,
-              "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n"
-              "{\"msg\":\"Dati MQTT non validi o incompleti\"}");
+    mg_printf(
+        nc, "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\r\n"
+            "{\"msg\":\"Dati MQTT non validi o incompleti\"}");
   }
-  
+
   free(server);
   free(port_str);
   free(devid);
   nc->flags |= MG_F_SEND_AND_CLOSE;
-  (void) user_data;
-  (void) hm;
+  (void)user_data;
+  (void)hm;
 }
 
-static void api_reboot_cb(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
-  if (ev != MG_EV_HTTP_REQUEST) return;
-  
-  mg_printf(nc,
-            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
-            "{\"msg\":\"Riavvio in corso...\"}");
-  
+static void api_reboot_cb(struct mg_connection *nc, int ev, void *ev_data,
+                          void *user_data) {
+  if (ev != MG_EV_HTTP_REQUEST)
+    return;
+
+  mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
+                "{\"msg\":\"Riavvio in corso...\"}");
+
   mgos_system_restart_after(1000);
   nc->flags |= MG_F_SEND_AND_CLOSE;
-  (void) ev_data;
-  (void) user_data;
+  (void)ev_data;
+  (void)user_data;
 }
 
-static void api_reset_cb(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
-  if (ev != MG_EV_HTTP_REQUEST) return;
-  
+static void api_reset_cb(struct mg_connection *nc, int ev, void *ev_data,
+                         void *user_data) {
+  if (ev != MG_EV_HTTP_REQUEST)
+    return;
+
   mgos_sys_config_set_wifi_sta_ssid("");
   mgos_sys_config_set_wifi_sta_pass("");
   mgos_sys_config_set_wifi_sta_enable(false);
   mgos_sys_config_set_wifi_ap_enable(true);
-  
+
   char *err = NULL;
   mgos_sys_config_save(&mgos_sys_config, false, &err);
   if (err != NULL) {
     free(err);
   }
-  
-  mg_printf(nc,
-            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
-            "{\"msg\":\"WiFi resettato. Riavvio in corso...\"}");
-  
+
+  mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"
+                "{\"msg\":\"WiFi resettato. Riavvio in corso...\"}");
+
   mgos_system_restart_after(1500);
   nc->flags |= MG_F_SEND_AND_CLOSE;
-  (void) ev_data;
-  (void) user_data;
+  (void)ev_data;
+  (void)user_data;
 }
 
-static void api_ota_page_cb(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
-  if (ev != MG_EV_HTTP_REQUEST) return;
-  
-  mg_printf(nc,
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/html\r\n"
-            "Connection: close\r\n\r\n"
-            "<!DOCTYPE html>\n"
-            "<html>\n"
-            "<head>\n"
-            "  <meta charset=\"utf-8\">\n"
-            "  <title>OTA Update</title>\n"
-            "  <style>\n"
-            "    body { background-color: #212529; color: #fff; font-family: sans-serif; text-align: center; padding: 50px; }\n"
-            "    .box { border: 2px dashed #00adef; padding: 40px; border-radius: 8px; display: inline-block; width: 400px; background: #1a1d20; }\n"
-            "    input[type=file] { margin: 20px 0; color: #ccc; }\n"
-            "    button { background: #00adef; color: #fff; border: none; padding: 12px 24px; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 13px; }\n"
-            "    button:hover { background: #0096d1; }\n"
-            "    .status { margin-top: 20px; font-weight: bold; font-size: 14px; }\n"
-            "    .btn-back { margin-top: 20px; display: inline-block; color: #a0a0a0; text-decoration: none; font-size: 12px; }\n"
-            "    .btn-back:hover { color: #fff; }\n"
-            "  </style>\n"
-            "</head>\n"
-            "<body>\n"
-            "  <div class=\"box\">\n"
-            "    <h2 style=\"color: #00adef; margin-top: 0;\">Aggiornamento Firmware</h2>\n"
-            "    <p>Seleziona l'archivio <strong>fw.zip</strong> per caricare il nuovo firmware.</p>\n"
-            "    <form id=\"uploadForm\">\n"
-            "      <input type=\"file\" id=\"fileInput\" name=\"filedata\" accept=\".zip\" required><br><br>\n"
-            "      <button type=\"submit\" id=\"btnSubmit\">Carica & Aggiorna</button>\n"
-            "    </form>\n"
-            "    <div id=\"status\" class=\"status\"></div>\n"
-            "    <a href=\"/\" class=\"btn-back\">&larr; Torna alla pagina principale</a>\n"
-            "  </div>\n"
-            "  <script>\n"
-            "    document.getElementById('uploadForm').addEventListener('submit', function(e) {\n"
-            "      e.preventDefault();\n"
-            "      const fileInput = document.getElementById('fileInput');\n"
-            "      if (fileInput.files.length === 0) return;\n"
-            "      const btn = document.getElementById('btnSubmit');\n"
-            "      const status = document.getElementById('status');\n"
-            "      btn.disabled = true;\n"
-            "      btn.innerText = 'Caricamento...';\n"
-            "      status.innerText = 'Caricamento in corso. Lo Shelly si riavvierà automaticamente...';\n"
-            "      status.style.color = '#00adef';\n"
-            "      const formData = new FormData();\n"
-            "      formData.append('filedata', fileInput.files[0]);\n"
-            "      fetch('/update', {\n"
-            "        method: 'POST',\n"
-            "        body: formData\n"
-            "      })\n"
-            "      .then(response => {\n"
-            "        if (response.ok) {\n"
-            "          status.innerText = 'Caricamento completato! Riavvio in corso... attendi 15-20 secondi e ricarica la pagina principale.';\n"
-            "          status.style.color = '#28a745';\n"
-            "        } else {\n"
-            "          status.innerText = 'Errore durante l\\'aggiornamento. Riprova.';\n"
-            "          status.style.color = '#dc3545';\n"
-            "          btn.disabled = false;\n"
-            "          btn.innerText = 'Carica & Aggiorna';\n"
-            "        }\n"
-            "      })\n"
-            "      .catch(() => {\n"
-            "        status.innerText = 'Connessione persa (Riavvio in corso...). Ricarica la home tra 15 secondi.';\n"
-            "        status.style.color = '#28a745';\n"
-            "      });\n"
-            "    });\n"
-            "  </script>\n"
-            "</body>\n"
-            "</html>\n");
+static void api_ota_page_cb(struct mg_connection *nc, int ev, void *ev_data,
+                            void *user_data) {
+  if (ev != MG_EV_HTTP_REQUEST)
+    return;
+
+  mg_printf(
+      nc,
+      "HTTP/1.1 200 OK\r\n"
+      "Content-Type: text/html\r\n"
+      "Connection: close\r\n\r\n"
+      "<!DOCTYPE html>\n"
+      "<html>\n"
+      "<head>\n"
+      "  <meta charset=\"utf-8\">\n"
+      "  <title>OTA Update</title>\n"
+      "  <style>\n"
+      "    body { background-color: #212529; color: #fff; font-family: "
+      "sans-serif; text-align: center; padding: 50px; }\n"
+      "    .box { border: 2px dashed #00adef; padding: 40px; border-radius: "
+      "8px; display: inline-block; width: 400px; background: #1a1d20; }\n"
+      "    input[type=file] { margin: 20px 0; color: #ccc; }\n"
+      "    button { background: #00adef; color: #fff; border: none; padding: "
+      "12px 24px; border-radius: 4px; font-weight: bold; cursor: pointer; "
+      "text-transform: uppercase; font-size: 13px; }\n"
+      "    button:hover { background: #0096d1; }\n"
+      "    .status { margin-top: 20px; font-weight: bold; font-size: 14px; }\n"
+      "    .btn-back { margin-top: 20px; display: inline-block; color: "
+      "#a0a0a0; text-decoration: none; font-size: 12px; }\n"
+      "    .btn-back:hover { color: #fff; }\n"
+      "  </style>\n"
+      "</head>\n"
+      "<body>\n"
+      "  <div class=\"box\">\n"
+      "    <h2 style=\"color: #00adef; margin-top: 0;\">Aggiornamento "
+      "Firmware</h2>\n"
+      "    <p>Seleziona il nuovo firmware.</p>\n"
+      "    <form id=\"uploadForm\">\n"
+      "      <input type=\"file\" id=\"fileInput\" name=\"filedata\" "
+      "accept=\".zip\" required><br><br>\n"
+      "      <button type=\"submit\" id=\"btnSubmit\">Carica & "
+      "Aggiorna</button>\n"
+      "    </form>\n"
+      "    <div id=\"status\" class=\"status\"></div>\n"
+      "    <a href=\"/\" class=\"btn-back\">&larr; Torna alla pagina "
+      "principale</a>\n"
+      "  </div>\n"
+      "  <script>\n"
+      "    document.getElementById('uploadForm').addEventListener('submit', "
+      "function(e) {\n"
+      "      e.preventDefault();\n"
+      "      const fileInput = document.getElementById('fileInput');\n"
+      "      if (fileInput.files.length === 0) return;\n"
+      "      const btn = document.getElementById('btnSubmit');\n"
+      "      const status = document.getElementById('status');\n"
+      "      btn.disabled = true;\n"
+      "      btn.innerText = 'Caricamento...';\n"
+      "      status.innerText = 'Caricamento in corso. Lo Shelly si riavvierà "
+      "automaticamente...';\n"
+      "      status.style.color = '#00adef';\n"
+      "      const formData = new FormData();\n"
+      "      formData.append('filedata', fileInput.files[0]);\n"
+      "      fetch('/update', {\n"
+      "        method: 'POST',\n"
+      "        body: formData\n"
+      "      })\n"
+      "      .then(response => {\n"
+      "        if (response.ok) {\n"
+      "          status.innerText = 'Caricamento completato! Riavvio in "
+      "corso... attendi 15-20 secondi e ricarica la pagina principale.';\n"
+      "          status.style.color = '#28a745';\n"
+      "        } else {\n"
+      "          status.innerText = 'Errore durante l\\'aggiornamento. "
+      "Riprova.';\n"
+      "          status.style.color = '#dc3545';\n"
+      "          btn.disabled = false;\n"
+      "          btn.innerText = 'Carica & Aggiorna';\n"
+      "        }\n"
+      "      })\n"
+      "      .catch(() => {\n"
+      "        status.innerText = 'Connessione persa (Riavvio in corso...). "
+      "Ricarica la home tra 15 secondi.';\n"
+      "        status.style.color = '#28a745';\n"
+      "      });\n"
+      "    });\n"
+      "  </script>\n"
+      "</body>\n"
+      "</html>\n");
   nc->flags |= MG_F_SEND_AND_CLOSE;
-  (void) ev_data;
-  (void) user_data;
+  (void)ev_data;
+  (void)user_data;
 }
 
 // --- Telemetry ---
 static void publish_status() {
-  if (!mgos_mqtt_global_is_connected()) return;
+  if (!mgos_mqtt_global_is_connected())
+    return;
   bool on = mgos_gpio_read(RELAY_PIN);
-  
+
   char topic_state[64];
-  snprintf(topic_state, sizeof(topic_state), "shellies/%s/relay/0", mgos_sys_config_get_mqtt_client_id());
+  snprintf(topic_state, sizeof(topic_state), "shellies/%s/relay/0",
+           mgos_sys_config_get_mqtt_client_id());
   mgos_mqtt_pub(topic_state, on ? "1" : "0", 1, 1, false);
-  
+
   char topic_status[64];
-  snprintf(topic_status, sizeof(topic_status), "shellies/%s/status", mgos_sys_config_get_mqtt_client_id());
+  snprintf(topic_status, sizeof(topic_status), "shellies/%s/status",
+           mgos_sys_config_get_mqtt_client_id());
   char buf[128];
-  snprintf(buf, sizeof(buf), "{\"ison\":%s,\"uptime\":%d}", on ? "true" : "false", (int)mgos_uptime());
+  snprintf(buf, sizeof(buf), "{\"ison\":%s,\"uptime\":%d}",
+           on ? "true" : "false", (int)mgos_uptime());
   mgos_mqtt_pub(topic_status, buf, strlen(buf), 1, false);
 }
 
 static void publish_energy() {
-  if (!mgos_mqtt_global_is_connected()) return;
+  if (!mgos_mqtt_global_is_connected())
+    return;
   bool on = mgos_gpio_read(RELAY_PIN);
   float voltage = get_voltage();
   float current = get_current();
   float power = get_valid_power(voltage, current, on);
   double temp = get_real_temperature();
-  
+
   static double last_energy_time = 0.0;
   static float cumulative_energy = 0.0;
   double now = mgos_uptime();
@@ -501,117 +555,122 @@ static void publish_energy() {
     cumulative_energy += power * hours;
   }
   last_energy_time = now;
-  
+
   char buf[32];
   char topic[64];
   const char *dev_id = mgos_sys_config_get_mqtt_client_id();
-  
+
   snprintf(topic, sizeof(topic), "shellies/%s/power", dev_id);
   snprintf(buf, sizeof(buf), "%.2f", power);
   mgos_mqtt_pub(topic, buf, strlen(buf), 1, false);
-  
+
   snprintf(topic, sizeof(topic), "shellies/%s/energy", dev_id);
   snprintf(buf, sizeof(buf), "%.3f", cumulative_energy);
   mgos_mqtt_pub(topic, buf, strlen(buf), 1, false);
-  
+
   snprintf(topic, sizeof(topic), "shellies/%s/temperature", dev_id);
   snprintf(buf, sizeof(buf), "%.1f", temp);
-  mgos_mqtt_pub(topic, buf, strlen(buf), 1, false);
-
-  snprintf(topic, sizeof(topic), "shellies/%s/voltage", dev_id);
-  snprintf(buf, sizeof(buf), "%.2f", voltage);
-  mgos_mqtt_pub(topic, buf, strlen(buf), 1, false);
-
-  snprintf(topic, sizeof(topic), "shellies/%s/current", dev_id);
-  snprintf(buf, sizeof(buf), "%.3f", current);
   mgos_mqtt_pub(topic, buf, strlen(buf), 1, false);
 }
 
 static void send_udp_telemetry(void *arg) {
-  if (!mgos_gpio_read(RELAY_PIN)) return;
-  
+  if (!mgos_gpio_read(RELAY_PIN))
+    return;
+
   float voltage = get_voltage();
   float current = get_current();
   float power = get_valid_power(voltage, current, true);
   double temp = get_real_temperature();
-  
+
   char payload[256];
-  snprintf(payload, sizeof(payload), 
-           "{\"device_id\":\"%s\",\"voltage\":%.2f,\"current\":%.3f,\"power\":%.2f,\"temperature\":%.1f,\"relay\":true,\"uptime\":%d}",
-           mgos_sys_config_get_mqtt_client_id(), voltage, current, power, temp, (int)mgos_uptime());
-           
+  snprintf(payload, sizeof(payload),
+           "{\"device_id\":\"%s\",\"voltage\":%.2f,\"current\":%.3f,\"power\":%"
+           ".2f,\"temperature\":%.1f,\"relay\":true,\"uptime\":%d}",
+           mgos_sys_config_get_mqtt_client_id(), voltage, current, power, temp,
+           (int)mgos_uptime());
+
   char addr[32];
-  snprintf(addr, sizeof(addr), "udp://%s:%d", mgos_sys_config_get_app_udp_ip(), mgos_sys_config_get_app_udp_port());
-  
+  snprintf(addr, sizeof(addr), "udp://%s:%d", mgos_sys_config_get_app_udp_ip(),
+           mgos_sys_config_get_app_udp_port());
+
   struct mg_connection *nc = mg_connect(mgos_get_mgr(), addr, NULL, NULL);
   if (nc != NULL) {
     mg_send(nc, payload, strlen(payload));
     nc->flags |= MG_F_SEND_AND_CLOSE;
   }
-  
-  (void) arg;
+
+  (void)arg;
 }
 
 static void timer_cb(void *arg) {
   publish_energy();
   send_udp_telemetry(NULL);
-  (void) arg;
+  (void)arg;
 }
 
-static void mqtt_ev_handler(struct mg_connection *nc, int ev, void *ev_data, void *user_data) {
+static void mqtt_ev_handler(struct mg_connection *nc, int ev, void *ev_data,
+                            void *user_data) {
   if (ev == MG_EV_MQTT_CONNACK) {
     char topic[64];
-    snprintf(topic, sizeof(topic), "shellies/%s/relay/0/command", mgos_sys_config_get_mqtt_client_id());
+    snprintf(topic, sizeof(topic), "shellies/%s/relay/0/command",
+             mgos_sys_config_get_mqtt_client_id());
     mgos_mqtt_sub(topic, NULL, NULL);
-    
-    snprintf(topic, sizeof(topic), "shellies/%s/online", mgos_sys_config_get_mqtt_client_id());
+
+    snprintf(topic, sizeof(topic), "shellies/%s/online",
+             mgos_sys_config_get_mqtt_client_id());
     mgos_mqtt_pub(topic, "1", 1, 1, true);
     publish_status();
   } else if (ev == MG_EV_MQTT_PUBLISH) {
-    struct mg_mqtt_message *msg = (struct mg_mqtt_message *) ev_data;
+    struct mg_mqtt_message *msg = (struct mg_mqtt_message *)ev_data;
     char topic[64];
-    snprintf(topic, sizeof(topic), "shellies/%s/relay/0/command", mgos_sys_config_get_mqtt_client_id());
+    snprintf(topic, sizeof(topic), "shellies/%s/relay/0/command",
+             mgos_sys_config_get_mqtt_client_id());
     if (mg_vcmp(&msg->topic, topic) == 0) {
-      if (mg_vcasecmp(&msg->payload, "on") == 0 || mg_vcasecmp(&msg->payload, "1") == 0) {
+      if (mg_vcasecmp(&msg->payload, "on") == 0 ||
+          mg_vcasecmp(&msg->payload, "1") == 0) {
         set_relay(true);
-      } else if (mg_vcasecmp(&msg->payload, "off") == 0 || mg_vcasecmp(&msg->payload, "0") == 0) {
+      } else if (mg_vcasecmp(&msg->payload, "off") == 0 ||
+                 mg_vcasecmp(&msg->payload, "0") == 0) {
         set_relay(false);
       } else if (mg_vcasecmp(&msg->payload, "toggle") == 0) {
         set_relay(!mgos_gpio_read(RELAY_PIN));
       }
     }
   }
-  (void) nc;
-  (void) user_data;
+  (void)nc;
+  (void)user_data;
 }
 
 enum mgos_app_init_result mgos_app_init(void) {
   // GPIO Init
   mgos_gpio_set_mode(RELAY_PIN, MGOS_GPIO_MODE_OUTPUT);
   mgos_gpio_write(RELAY_PIN, 0);
-  
+
   mgos_gpio_set_mode(LED_PIN, MGOS_GPIO_MODE_OUTPUT);
   mgos_gpio_write(LED_PIN, 1);
-  
+
   mgos_gpio_set_mode(BTN_PIN, MGOS_GPIO_MODE_INPUT);
   mgos_gpio_set_pull(BTN_PIN, MGOS_GPIO_PULL_UP);
-  mgos_gpio_set_button_handler(BTN_PIN, MGOS_GPIO_PULL_UP, MGOS_GPIO_INT_EDGE_NEG, 50, btn_cb, NULL);
-  
+  mgos_gpio_set_button_handler(BTN_PIN, MGOS_GPIO_PULL_UP,
+                               MGOS_GPIO_INT_EDGE_NEG, 50, btn_cb, NULL);
+
   // HLW8012 Init
   mgos_gpio_set_mode(CF_PIN, MGOS_GPIO_MODE_INPUT);
   mgos_gpio_set_mode(CF1_PIN, MGOS_GPIO_MODE_INPUT);
   mgos_gpio_set_mode(SEL_PIN, MGOS_GPIO_MODE_OUTPUT);
   mgos_gpio_write(SEL_PIN, 0); // Current mode
-  
-  mgos_gpio_set_int_handler(CF_PIN, MGOS_GPIO_INT_EDGE_ANY, cf_int_handler, NULL);
+
+  mgos_gpio_set_int_handler(CF_PIN, MGOS_GPIO_INT_EDGE_ANY, cf_int_handler,
+                            NULL);
   mgos_gpio_enable_int(CF_PIN);
-  
-  mgos_gpio_set_int_handler(CF1_PIN, MGOS_GPIO_INT_EDGE_ANY, cf1_int_handler, NULL);
+
+  mgos_gpio_set_int_handler(CF1_PIN, MGOS_GPIO_INT_EDGE_ANY, cf1_int_handler,
+                            NULL);
   mgos_gpio_enable_int(CF1_PIN);
-  
+
   // ADC Init
   mgos_adc_enable(ANALOG_PIN);
-  
+
   // HTTP Endpoints
   mgos_register_http_endpoint("/status", api_status_cb, NULL);
   mgos_register_http_endpoint("/relay/0", api_relay_cb, NULL);
@@ -622,16 +681,16 @@ enum mgos_app_init_result mgos_app_init(void) {
   mgos_register_http_endpoint("/reboot", api_reboot_cb, NULL);
   mgos_register_http_endpoint("/reset", api_reset_cb, NULL);
   mgos_register_http_endpoint("/ota", api_ota_page_cb, NULL);
-  
+
   // MQTT Event Handler
   mgos_mqtt_add_global_handler(mqtt_ev_handler, NULL);
-  
+
   // Timers
   mgos_set_timer(2000, MGOS_TIMER_REPEAT, sel_toggle_timer_cb, NULL);
   mgos_set_timer(60000, MGOS_TIMER_REPEAT, timer_cb, NULL);
-  
+
   // Commit firmware update to prevent Mongoose OS rollback on restart
   mgos_ota_commit();
-  
+
   return MGOS_APP_INIT_SUCCESS;
 }
