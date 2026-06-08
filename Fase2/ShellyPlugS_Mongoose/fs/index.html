@@ -354,7 +354,7 @@
                 })
                 .catch(() => {});
         }
-        setInterval(fetchStatus, 3000); fetchStatus();
+        setInterval(fetchStatus, 5000); fetchStatus();
 
         function formatUptime(s) {
             const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;

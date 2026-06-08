@@ -41,8 +41,8 @@ static volatile uint32_t last_cf1_voltage_time = 0;
 static volatile uint32_t last_cf1_current_time = 0;
 static volatile uint32_t last_toggle_time = 0;
 
-static double voltage_multiplier = 888.07;
-static double current_multiplier = 2.50;
+static double voltage_multiplier = 1903007.14;
+static double current_multiplier = 815.22;
 
 static float last_correct_power = 0.0;
 
