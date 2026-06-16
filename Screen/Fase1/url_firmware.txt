@@ -1,0 +1,6 @@
+http://api.shelly.cloud/files/firmware
+http://api.shelly.cloud/timezone/autodetect?time=%ld&fw=%s
+http://api.shelly.cloud/timezone/tzinfo?tz=%s&time=%ld&fw=%s
+http://api.shelly.cloud/files/firmware
+http://api.shelly.cloud/timezone/autodetect?time=%ld&fw=%s
+http://api.shelly.cloud/timezone/tzinfo?tz=%s&time=%ld&fw=%s
