@@ -1,0 +1,29 @@
+Ora passiamo a scrivere la relazione per la fase 3 del progetto. Nei file "IdeaIniziale.pdf" e "/Relazione/Chapters/Introduction.tex" puoi trovare la spiegazione di quelli che sono gli obiettivi della fase 3 (non fare riferimento al secure bootloader perche non lo abbiamo implementato). Sulla base di cio crea il testo anche anlizzando tutte le immaggini che sono presenti nella cartella "/Screen/Fase3", inserendole tutte e facendo gli opportuni riferimenti. In piu, se c'e da fare dei riferimenti al codice aggiuntivi rispetto alle immagini, aggiungi le istruzioni tramite il comando \verbatim. 
+
+In questa fase, fai riferiemnto solo al firmware presente nella cartella /Fase3/ShellyPlugS. Indica che a differenza della Fase 2, qui il firmware e stato creato utilizzando Arduino IDE per variare
+
+Inserisci una spiegazione dettagliata di come funziona il processo di firma e verifica della firma. Nonche' di come sono stati creati i certificati, con i relativi comandi 'openssl', per tutte le entita del sistema affiche' possa avvenire la comunicazione con MQTTS. In entrambi i casi, in aggiunta, descrivi anche brevemente la mitigazione applicata rispetto alla fase 2 (Puoi trovare gia' i capitoli di fase 2 e fase 1 per comprendere di piu il progetto)
+
+Se c'e qualcosa di cui non ti e chiaro come e stata implementata non scrivere nulla, ma lascia solo un commento
+
+Scrivi la relazione in inglese all'interno di "Relazione/Chapters/Fase3.tex" e sii il piu completo possibile. Se non ti e chiaro qualcosa puoi chiedere a me
+
+L'indice che devi seguire e' il seguente (che e gia presente in Fase3.tex):
+\chapter{Phase 3: Hardening \& Mitigation}
+
+\section{Ensuring Integrity: Secure Update Implementation}
+
+\subsection{Firmware Signing}
+%Cryptographic signing of legitimate binaries with a private key.
+
+\subsection{Signing Verification}:
+%Public key embedding and signatures validation before update
+
+
+\section{Ensuring Confidentiality and Authenticity}
+
+\subsection{Secure MQTT (MQTTS)}
+%Migrating traffic to port 8883 implementing TLS/SSL protocols
+
+\subsection{Mutual Authentication (mTLS)}
+%Utilizing X.509 certificates for mutual verification between Client and Broker.

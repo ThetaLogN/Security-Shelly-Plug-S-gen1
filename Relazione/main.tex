@@ -1,0 +1,132 @@
+\documentclass[a4paper,12pt,oneside]{book}
+\linespread{1.5}
+\usepackage{geometry}
+%\geometry{top=2cm,bottom=2.5cm,left=2.5cm,right=2.5cm}
+\geometry{left=50pt, right=50pt, bottom=55pt, top=40pt}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz,pgf}
+\usepackage{amsfonts}
+\usepackage{todonotes}
+\usepackage{subfig}
+\usepackage{fancyhdr}
+\setlength{\parindent}{0cm}
+
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{float}
+
+\usepackage{amsmath}
+\usepackage{numprint}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{tocbibind}
+\setcounter{tocdepth}{3}
+\usepackage{hyperref}
+
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage[table]{xcolor}
+\definecolor{lightgray}{gray}{0.95}
+\definecolor{darkblue}{rgb}{0.0, 0.2, 0.4}
+
+\usepackage{longtable}
+
+\usepackage{minted}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+
+\tcbuselibrary{listings, skins, breakable}
+\definecolor{codebg}{RGB}{245,245,245}
+
+\setminted{
+    bgcolor=codebg,
+    fontsize=\small,
+    linenos,
+    numbersep=8pt,
+    frame=lines,
+    framesep=3mm,
+    baselinestretch=1.1,
+    tabsize=2,
+    breaklines=true
+}
+
+\newenvironment{bashcode}
+{\VerbatimEnvironment\begin{minted}{bash}}
+{\end{minted}}
+
+\usepackage{csquotes}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhf{}
+\fancyhead[L]{}
+\fancyfoot[C]{\thepage}
+
+\graphicspath{{Images/}} %% cartella dalla quale ricavare le immagini %%
+
+\setlength {\marginparwidth }{2cm} 
+\pgfplotsset{compat=1.16}
+
+  
+\begin{document}
+%% Frontespizio %%
+\begin{titlepage}
+    \begin{center}
+    \vspace*{0.2cm}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\textwidth]{Images/logo.png}
+    \end{figure}
+        \vspace{5mm}
+%% Dipartimento %%
+    	\uppercase{\normalsize Dipartimento di Ingegneria Informatica, Modellistica, Elettronica e Sistemistica}\\
+    \end{center}
+    \begin{center}
+
+    {{{\huge \textbf{Vulnerability Analysis and \\[0.1cm] Hardening of IoT Devices}} \\
+        
+    \vspace{0.5cm}
+        
+    % Sottotitolo
+    {\Large \textit{The Shelly Plug S (Gen1) case study: \\[0.1cm] from firmware extraction to countermeasure implementation.}}}}\\
+
+    \vspace{7mm}
+
+    %Eventualmente immagine Presa
+    
+    \end{center}
+    
+    \vspace{25mm}
+    \noindent
+    \begin{minipage}[t]{0.48\textwidth}
+        \large
+        Students: \\ 
+        \textbf{Gallicchio Vittorio}, 263726 \\ 
+        \textbf{Martucci Giorgio}, 263688 \\ 
+        \textbf{Oliverio Ilenia}, 263924
+    \end{minipage}%
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \raggedleft
+        \large
+        Teachers: \\ 
+        \textbf{Antonio Guerrieri} \\ 
+        \textbf{Michele Ianni} \\ 
+        \textbf{Claudia Greco}
+    \end{minipage}
+    
+    \vspace{20mm}
+    
+%% Anno Accademico %%
+    \centering{\large \uppercase{Academic year 2025/2026}}
+\end{titlepage}
+
+\tableofcontents
+
+%\include{Chapters/Introductions}
+%\include{Chapters/Fase1}
+\include{Chapters/Fase2}
+%\include{Chapters/Fase3}
+%\include{Chapters/Conclusions}
+
+\end{document}

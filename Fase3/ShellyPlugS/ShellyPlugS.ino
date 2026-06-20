@@ -936,7 +936,7 @@ void setup() {
         if (Update.hasError()) {
           server.send(500, "text/plain",
                       "ERRORE: Aggiornamento Fallito. Firma non valida, file "
-                      "alterato o corrotto.");
+                      "alterato o corrotta.");
         } else {
           server.send(200, "text/plain",
                       "SUCCESSO: Firma verificata. Aggiornamento in corso. La "
@@ -949,8 +949,6 @@ void setup() {
         HTTPUpload &upload = server.upload();
 
         if (upload.status == UPLOAD_FILE_START) {
-          Serial.printf("[OTA] Inizio ricezione file: %s\n",
-                        upload.filename.c_str());
 
           static BearSSL::PublicKey otaPubKey(public_key_pem);
           static BearSSL::HashSHA256 otaHash;
@@ -970,12 +968,10 @@ void setup() {
           }
         } else if (upload.status == UPLOAD_FILE_END) {
           if (Update.end(true)) {
-            Serial.printf(
-                "[OTA] Firma Verificata! Dimensione totale: %u bytes\n",
-                upload.totalSize);
+            Serial.printf("[OTA] Signature verified! Total size: %u bytes\n",
+                          upload.totalSize);
           } else {
-            Serial.println("[OTA] ALLARME INTRUSIONE: La firma non corrisponde "
-                           "alla chiave pubblica.");
+            Serial.println("[OTA] Error. The signature is not valid or the file is corrupted.");
             Update.printError(Serial);
           }
         }

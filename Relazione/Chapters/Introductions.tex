@@ -1,0 +1,41 @@
+\chapter*{Introduction}
+\addcontentsline{toc}{chapter}{Introduction}
+
+\section*{Scenario and Motivations} \addcontentsline{toc}{section}{Scenario and Motivations}
+The current technological scenario is characterized by the exponential growth of the Internet of Things (IoT), which, while offering advanced automation and monitoring functionality, often presents significant security challenges.
+
+\medskip
+\noindent In this context, this report analyzes these critical issues through the study of the smart socket, \emph{Shelly Plug S (Gen1)}, a widely used device in the consumer market that adopts a hardware architecture based on the ESP8266 SoC, the reference standard for low-cost solutions.
+
+\medskip
+\noindent The interest in this target lies in the different risks that can arise following its compromise, which can be mainly categorized into two areas: systemic and privacy-related.
+
+\noindent In the first case, operating as terminal nodes connected to domestic or business networks, these devices often represent the point of greatest vulnerability. An insecure IoT device does not constitute, in fact, a risk only to itself, but acts as a gateway for attacks on other devices connected to the same network, threatening the integrity of the entire system.
+
+\noindent In the second case, although the Shelly Plug S performs elementary functions, the generated data flows, in the specific energy consumption and the operating state of the relay (on/off), are extremely sensitive. If intercepted, these data allow for an accurate analysis, precisely revealing the daily routines and the periods of presence of the occupants in the home.
+
+\medskip
+\noindent The analysis of a real commercial product, therefore, facilitates an evaluation of the balance between production costs, ease of use, and the actual robustness of data protection mechanisms.
+
+\section*{Objectives and Methodology of Analysis} \addcontentsline{toc}{section}{Objectives and Methodology of Analysis}
+The goal of this research is to conduct an end-to-end analysis of device security, adopting an approach that simulates both the perspective of an attacker and that of a protection-focused developer.
+
+\medskip
+\noindent The project is divided into three distinct methodological phases: 
+\begin{enumerate}
+    \item \textbf{Analysis of Physical Vulnerabilities, Reverse Engineering, and Analysis of Insecure Protocols}: study of the hardware interface to identify serial access ports (UARTs) on the Printed Circuit Board (PCB), aimed at extracting (dumping) the original firmware.
+    
+    \noindent This phase aims to identify sensitive information, such as cryptographic keys or hardcoded credentials, and to detect structural vulnerabilities in the logical execution of the firmware itself, including the use of unencrypted communication protocols (e.g., MQTT) and insecure Over-the-Air (OTA) update mechanisms.
+    
+    \item \textbf{Development and Injection of Offensive Firmware}: Red Team simulation designed to demonstrate the real-world impact of the identified vulnerabilities.
+
+    \noindent This phase includes the development of custom firmware, utilizing the same Mongoose OS framework as the original firmware, designed to exfiltrate device telemetry over the network (Energy Spyware).
+
+    \noindent Additionally, a Man-in-the-Middle (MITM) attack scenario was set up to force the installation of the custom firmware onto the device, establishing persistent control. 
+    
+    \item \textbf{Hardening Strategies and Security by Design}: Implementation of countermeasures to ensure confidentiality, integrity, and authenticity requirements on resource-constrained hardware.
+
+    \noindent This phase involves the adoption of firmware signing techniques and the implementation of a secure update handler for the cryptographic verification of binary updates; this approach prevents the execution of unauthorized code, invalidating the OTA injection attempts analyzed in previous phases.
+
+    \noindent At the same time, communication security is ensured by migrating to the MQTTS protocol via TLS/SSL and by implementing Mutual Authentication (mTLS) with X.509 certificates, effectively preventing interception and traffic manipulation on the local network.
+\end{enumerate}
