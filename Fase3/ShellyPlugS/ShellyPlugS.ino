@@ -583,9 +583,9 @@ void saveConfig() {
   Serial.println("[CFG] Configurazione salvata");
 }
 
-// --- SINCRONIZZAZIONE NTP (necessaria per validazione certificati TLS) ---
+// NTP sync 
 void syncNTP() {
-  sysLog("[NTP] Sincronizzazione orologio...");
+  sysLog("[NTP] Syncing clock...");
   configTime(0, 0, "pool.ntp.org", "time.nist.gov");
 
   time_t now = time(nullptr);
@@ -598,16 +598,15 @@ void syncNTP() {
   sysLog("\n");
 
   if (now < 8 * 3600 * 2) {
-    sysLog("[NTP] ATTENZIONE: sincronizzazione fallita! TLS potrebbe non "
-           "funzionare.\n");
+    sysLog("[NTP] Warning: Sync Failed! TLS may not work.\n");
   } else {
     struct tm timeinfo;
     gmtime_r(&now, &timeinfo);
-    sysLog("[NTP] Orologio sincronizzato: %s", asctime(&timeinfo));
+    sysLog("[NTP] Clock synced: %s", asctime(&timeinfo));
   }
 }
 
-// --- CONFIGURAZIONE TLS PER MQTTS ---
+// TLS setup for MQTTS
 void setupTLS() {
   static BearSSL::X509List caCert(ca_cert);
   static BearSSL::X509List clientCert(client_cert);
@@ -618,8 +617,8 @@ void setupTLS() {
                                    BR_KEYTYPE_EC);
   wifiClientSecure.setBufferSizes(4096, 512);
 
-  sysLog("[TLS] Certificati CA + Client caricati (mTLS)\n");
-  sysLog("[TLS] Heap libero dopo setup: %u bytes\n", ESP.getFreeHeap());
+  sysLog("[TLS] CA + Client loaded (mTLS)\n");
+  sysLog("[TLS] Free heap after setup: %u bytes\n", ESP.getFreeHeap());
 }
 
 void wifiConnect() {
@@ -935,12 +934,10 @@ void setup() {
         server.sendHeader("Connection", "close");
         if (Update.hasError()) {
           server.send(500, "text/plain",
-                      "ERRORE: Aggiornamento Fallito. Firma non valida, file "
-                      "alterato o corrotta.");
+                      "ERROR: Update Failed. Invalid signature, file altered or corrupted.");
         } else {
           server.send(200, "text/plain",
-                      "SUCCESSO: Firma verificata. Aggiornamento in corso. La "
-                      "presa si riavviera' a breve...");
+                      "SUCCESS: Signature verified. Update in progress. The plug will reboot shortly...");
           delay(1000);
           ESP.restart();
         }

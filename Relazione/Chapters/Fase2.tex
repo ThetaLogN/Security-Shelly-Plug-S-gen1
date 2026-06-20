@@ -29,7 +29,7 @@ The malicious firmware was developed using the \textbf{Mongoose OS framework}, a
     \label{fig:mos_yaml}
 \end{figure}
 
-\subsection{Data Collection} %Veridica Ilenia da qui
+\subsection{Data Collection} %Verifica Ilenia da qui
 The primary function of the malicious firmware is to perform \textbf{real-time profiling of the electrical parameters} measured by the device's onboard HLW8012 energy metering IC. The firmware interfaces with the HLW8012 via three GPIO pins: \texttt{CF} (GPIO~5) for active power pulses, \texttt{CF1} (GPIO~14) for voltage/current multiplexed pulses, and \texttt{SEL} (GPIO~12) for switching between voltage and current measurement modes.
 
 \medskip
@@ -49,7 +49,7 @@ The primary function of the malicious firmware is to perform \textbf{real-time p
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.80\linewidth]{Images/Fase2/getValori.png}
+    \includegraphics[width=0.85\linewidth]{Images/Fase2/getValori.png}
     \caption{Voltage, current, and power acquisition functions from the malicious firmware (\texttt{main.c})}
     \label{fig:get_valori}
 \end{figure}
@@ -64,7 +64,7 @@ The actual exfiltration vector uses \textbf{unencrypted UDP datagrams} transmitt
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.80\linewidth]{Images/Fase2/sendUDP.png}
+    \includegraphics[width=0.85\linewidth]{Images/Fase2/sendUDP.png}
     \caption{UDP exfiltration function: telemetry payload construction and transmission to the C2 server}
     \label{fig:send_udp}
 \end{figure}
@@ -117,7 +117,7 @@ WantedBy=multi-user.target
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.65\linewidth]{Images/Fase2/MongoDB.png}
+    \includegraphics[width=0.85\linewidth]{Images/Fase2/MongoDB.png}
     \caption{Exfiltrated telemetry data stored in MongoDB, queried from the \texttt{iot\_data.telemetry} collection}
     \label{fig:mongodb}
 \end{figure}
@@ -145,14 +145,14 @@ To ensure the compromise remains stealthy, the firmware replicates the standard 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.80\linewidth]{Images/Fase2/PublishStatus.png}
+    \includegraphics[width=0.85\linewidth]{Images/Fase2/PublishStatus.png}
     \caption{MQTT \texttt{publish\_status()} function: relay state and device status broadcasting}
     \label{fig:publish_status}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.80\linewidth]{Images/Fase2/PublishEnergy.png}
+    \includegraphics[width=0.85\linewidth]{Images/Fase2/PublishEnergy.png}
     \caption{MQTT \texttt{publish\_energy()} function: power, energy, and temperature telemetry publishing}
     \label{fig:publish_energy}
 \end{figure}
@@ -339,7 +339,7 @@ Both attack variants produce the same outcome: the device downloads, applies, an
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.80\linewidth]{Images/Fase2/MITM3.jpg}
-    \caption{Post-injection: the device now serves the malicious firmware's web interface, confirming successful firmware replacement}
+    \caption{Post-injection the device serves the malicious firmware's web interface, confirming successful firmware replacement}
     \label{fig:mitm_post}
 \end{figure}
 
@@ -348,7 +348,7 @@ Both attack variants produce the same outcome: the device downloads, applies, an
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.80\linewidth]{Images/Fase2/MQTTRedfw.png}
+    \includegraphics[width=1\linewidth]{Images/Fase2/MQTTRedfw.png}
     \caption{MQTT telemetry captured via \texttt{mosquitto\_sub}, showing live power, energy, and temperature readings from the compromised device}
     \label{fig:mqtt_redfw}
 \end{figure}
