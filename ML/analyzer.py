@@ -47,9 +47,9 @@ def analyze_habits():
     max_power = max(powers)
     avg_power = sum(powers) / total_samples
     
-    # Stima energia (ogni campione rappresenta un intervallo di 30 minuti = 0.5 ore)
-    total_energy_kwh = sum(dp["power"] * 0.5 / 1000.0 for dp in data_points)
-    relay_on_hours = sum(1 for dp in data_points if dp["relay"]) * 0.5
+    # Stima energia (ogni campione rappresenta un intervallo di 60 secondi = 1/60 ore)
+    total_energy_kwh = sum(dp["power"] * (1.0 / 60.0) / 1000.0 for dp in data_points)
+    relay_on_hours = sum(1 for dp in data_points if dp["relay"]) * (1.0 / 60.0)
 
     # Raggruppamento dati per data e ora
     daily_energy = {}
@@ -60,7 +60,7 @@ def analyze_habits():
         hour = dp["timestamp"].hour
         
         # Accumulo energia giornaliera
-        daily_energy[date_str] = daily_energy.get(date_str, 0.0) + (dp["power"] * 0.5 / 1000.0)
+        daily_energy[date_str] = daily_energy.get(date_str, 0.0) + (dp["power"] * (1.0 / 60.0) / 1000.0)
         
         if date_str not in daily_hourly_profiles:
             daily_hourly_profiles[date_str] = [[] for _ in range(24)]
@@ -137,7 +137,7 @@ def analyze_habits():
         trend = "Stabile"
 
     # Analisi della presenza/occupazione domestica (basata sulla potenza attiva)
-    presence_threshold = 30.0
+    presence_threshold = 10.0
     presence_probability = [0.0] * 24
     for hour in range(24):
         active_days = sum(1 for d in clean_daily_profiles if clean_daily_profiles[d][hour] > presence_threshold)

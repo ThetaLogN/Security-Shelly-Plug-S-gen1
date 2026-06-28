@@ -25,9 +25,9 @@ L'analizzatore segue una sequenza lineare di elaborazione:
    - Estrae ed effettua il casting dei parametri `power` (potenza in Watt, convertita in float) e `relay` (stato del relè, convertito in booleano).
    - Salta automaticamente eventuali righe malformate o vuote per evitare crash.
 3. **Calcolo Statistiche di Base**:
-   - **Energia Totale (kWh)**: Calcolata moltiplicando la potenza istantanea per la frazione oraria. Poiché il campionamento dello Shelly avviene ogni 30 minuti, ciascun campione equivale a $0.5$ ore:
-     $$\text{Energia (kWh)} = \sum \frac{\text{Potenza (W)} \times 0.5 \text{ ore}}{1000}$$
-   - **Ore Relè Attivo**: Somma dei periodi in cui il relè era in stato `True` (ogni record positivo equivale a $0.5$ ore).
+   - **Energia Totale (kWh)**: Calcolata moltiplicando la potenza istantanea per la frazione oraria. Poiché il campionamento dello Shelly avviene ogni 60 secondi, ciascun campione equivale a $1/60$ di ora:
+     $$\text{Energia (kWh)} = \sum \frac{\text{Potenza (W)} \times \frac{1}{60} \text{ ore}}{1000}$$
+   - **Ore Relè Attivo**: Somma dei periodi in cui il relè era in stato `True` (ogni record positivo equivale a $1/60$ di ora, cioè 1 minuto).
    - **Consumo Medio Settimanale**: Calcola la media dei consumi aggregando i dati per giorno della settimana (Lunedì-Domenica) per evidenziare differenze sistematiche tra giorni feriali e festivi.
 
 ---
@@ -36,7 +36,7 @@ L'analizzatore segue una sequenza lineare di elaborazione:
 
 Una parte fondamentale del progetto riguarda la profilazione delle abitudini dell'utente a scopi di analisi di sicurezza e privacy (dimostrando come un attaccante in ascolto della telemetria possa dedurre se l'utente è in casa):
 
-- **Soglia di Presenza**: Se la potenza misurata supera i **30W**, si assume che un elettrodomestico rilevante sia attivo e che ci sia qualcuno in casa.
+- **Soglia di Presenza**: Se la potenza misurata supera i **10W**, si assume che un elettrodomestico rilevante sia attivo e che ci sia qualcuno in casa.
 - **Probabilità di Presenza Oraria**: Per ogni ora della giornata ($00:00$ - $23:00$), calcola la percentuale di giorni in cui la soglia è stata superata in quella specifica ora.
 - **Fasce di Presenza (In Casa)**: Finestre orarie in cui la probabilità di presenza è **$\ge 50\%$**.
 - **Fasce di Assenza (Fuori Casa)**: Finestre orarie (nella fascia diurna $08:00$ - $20:00$) in cui la probabilità di presenza scende sotto il **$25\%$**.
@@ -66,16 +66,7 @@ Utilizzata per identificare il trend generale a lungo termine dei consumi.
 
 ---
 
-## 4. Rilevamento delle Anomalie
-
-L'analizzatore esegue controlli euristici e logici su ciascun record per evidenziare anomalie:
-
-1. **Consumo Notturno Insolito**: Generato quando viene misurato un carico superiore a **200W** nelle ore comprese tra la $01:00$ e le $05:00$ del mattino (orario di riposo standard).
-2. **Carico a Relè Spento**: Generato se viene rilevato un assorbimento di potenza significativo (soglia **$> 5W$**) mentre lo stato del relè dichiarato dallo Shelly è spento (`False`). Questa discrepanza può segnalare un malfunzionamento, un bypass elettrico hardware o una manomissione.
-
----
-
-## 5. Struttura dell'Output (JSON)
+## 4. Struttura dell'Output (JSON)
 
 La funzione `analyze_habits()` restituisce un dizionario Python con la seguente struttura:
 

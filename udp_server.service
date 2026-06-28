@@ -6,7 +6,7 @@ After=network.target mongod.service
 # Sostituisci 'azureuser' con il tuo nome utente effettivo sulla VM
 User=IoT-admin
 WorkingDirectory=/home/IoT-admin/udpServer
-ExecStart=/home/IoT-admin/udpServer/env/bin/python3 /home/IoT-admin/udpServer/udpServer.py
+ExecStart=/home/IoT-admin/udpServer/env/bin/python3 -u /home/IoT-admin/udpServer/udpServer.py
 
 # Configurazione per MongoDB locale sulla VM
 Environment="MONGO_URI=mongodb://localhost:27017/"
