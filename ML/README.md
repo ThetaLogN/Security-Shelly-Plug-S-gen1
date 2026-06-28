@@ -36,7 +36,7 @@ L'analizzatore segue una sequenza lineare di elaborazione:
 
 Una parte fondamentale del progetto riguarda la profilazione delle abitudini dell'utente a scopi di analisi di sicurezza e privacy (dimostrando come un attaccante in ascolto della telemetria possa dedurre se l'utente è in casa):
 
-- **Soglia di Presenza**: Se la potenza misurata supera i **10W**, si assume che un elettrodomestico rilevante sia attivo e che ci sia qualcuno in casa.
+- **Soglia di Presenza**: Se la potenza misurata supera i **5W**, si assume che un elettrodomestico rilevante sia attivo e che ci sia qualcuno in casa.
 - **Probabilità di Presenza Oraria**: Per ogni ora della giornata ($00:00$ - $23:00$), calcola la percentuale di giorni in cui la soglia è stata superata in quella specifica ora.
 - **Fasce di Presenza (In Casa)**: Finestre orarie in cui la probabilità di presenza è **$\ge 50\%$**.
 - **Fasce di Assenza (Fuori Casa)**: Finestre orarie (nella fascia diurna $08:00$ - $20:00$) in cui la probabilità di presenza scende sotto il **$25\%$**.

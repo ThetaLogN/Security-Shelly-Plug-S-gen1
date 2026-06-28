@@ -137,7 +137,7 @@ def analyze_habits():
         trend = "Stabile"
 
     # Analisi della presenza/occupazione domestica (basata sulla potenza attiva)
-    presence_threshold = 10.0
+    presence_threshold = 5.0
     presence_probability = [0.0] * 24
     for hour in range(24):
         active_days = sum(1 for d in clean_daily_profiles if clean_daily_profiles[d][hour] > presence_threshold)
