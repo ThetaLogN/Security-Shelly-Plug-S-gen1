@@ -16,7 +16,7 @@ def analyze_habits():
     Usa scikit-learn per il clustering dei profili giornalieri e per calcolare il trend dei consumi.
     """
     if not os.path.exists(CSV_PATH):
-        return {"error": "Nessun dato di telemetria disponibile. Carica un file CSV per iniziare."}
+        return {"error": "No telemetry data available. Please upload a CSV file to get started."}
 
     data_points = []
     with open(CSV_PATH, mode="r", encoding="utf-8") as f:
@@ -36,7 +36,7 @@ def analyze_habits():
                 continue
 
     if not data_points:
-        return {"error": "Nessun dato di telemetria disponibile nel file CSV."}
+        return {"error": "No telemetry data available in the CSV file."}
 
     # Ordina i punti per data/ora
     data_points.sort(key=lambda x: x["timestamp"])
@@ -109,14 +109,14 @@ def analyze_habits():
         cluster_low = kmeans.cluster_centers_[low_idx].tolist()
         
         day_assignments = {
-            date: ("Alta Attività" if label == high_idx else "Basso Consumo")
+            date: ("High Activity" if label == high_idx else "Low Consumption")
             for date, label in zip(clean_daily_profiles.keys(), kmeans.labels_)
         }
     else:
         # Fallback se non ci sono abbastanza giorni
         cluster_high = overall_hourly_profile
         cluster_low = [v * 0.5 for v in overall_hourly_profile]
-        day_assignments = {d: "Attività Standard" for d in clean_daily_profiles}
+        day_assignments = {d: "Standard Activity" for d in clean_daily_profiles}
 
     # ML con Scikit-Learn (Regressione Lineare per il trend dei consumi)
     dates_sorted = sorted(list(daily_energy.keys()))
@@ -130,11 +130,11 @@ def analyze_habits():
         slope = 0.0
 
     if slope > 0.01:
-        trend = "In crescita"
+        trend = "Growing"
     elif slope < -0.01:
-        trend = "In calo"
+        trend = "Decreasing"
     else:
-        trend = "Stabile"
+        trend = "Stable"
 
     # Analisi della presenza/occupazione domestica (basata sulla potenza attiva)
     presence_threshold = 5.0
@@ -149,7 +149,7 @@ def analyze_habits():
 
     def format_hours(hours_list):
         if not hours_list:
-            return "Nessuna rilevata"
+            return "None detected"
         ranges = []
         start = None
         prev = None
@@ -178,15 +178,15 @@ def analyze_habits():
         if (1 <= hour <= 5) and dp["power"] > 200.0:
             anomalies.append({
                 "timestamp": dp["timestamp"].strftime("%Y-%m-%d %H:%M:%S"),
-                "type": "Consumo Notturno Insolito",
-                "description": f"Rilevato picco di {dp['power']:.1f}W alle ore {hour}:00, tipicamente periodo di riposo."
+                "type": "Unusual Nightly Consumption",
+                "description": f"Detected peak of {dp['power']:.1f}W at {hour:02d}:00, typically a sleep period."
             })
         # Consumo rilevato a relè spento
         if not dp["relay"] and dp["power"] > 5.0:
             anomalies.append({
                 "timestamp": dp["timestamp"].strftime("%Y-%m-%d %H:%M:%S"),
-                "type": "Carico a Relè Spento",
-                "description": f"Misurata potenza di {dp['power']:.1f}W mentre il relè risulta spento."
+                "type": "Active Load on Off Relay",
+                "description": f"Measured power of {dp['power']:.1f}W while the relay is off."
             })
     anomalies = anomalies[-10:]
     anomalies.reverse()
@@ -195,18 +195,18 @@ def analyze_habits():
     recommendations = []
     peak_hour = overall_hourly_profile.index(max(overall_hourly_profile)) if overall_hourly_profile else 0
     recommendations.append(
-        f"Il picco massimo di consumo si concentra alle ore {peak_hour}:00. Consigliamo di programmare i carichi pesanti al di fuori di questa fascia."
+        f"Maximum consumption peak occurs at {peak_hour:02d}:00. We recommend scheduling heavy loads outside this time window."
     )
     
     night_powers = [overall_hourly_profile[h] for h in range(1, 6)]
     avg_night_power = sum(night_powers) / len(night_powers) if night_powers else 0.0
     if avg_night_power > 25.0:
         recommendations.append(
-            f"Il tuo consumo notturno medio è di {avg_night_power:.1f}W. Potresti avere dispositivi in standby che assorbono inutilmente energia."
+            f"Your average nightly consumption is {avg_night_power:.1f}W. You might have standby devices wasting energy."
         )
     else:
         recommendations.append(
-            "Ottimo consumo in standby nelle ore notturne. I dispositivi elettronici sono configurati correttamente."
+            "Excellent nightly standby consumption. Electronic devices are configured correctly."
         )
 
     # Costo stimato (es. 0.25 € / kWh)

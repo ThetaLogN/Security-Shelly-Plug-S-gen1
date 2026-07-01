@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shelly Plug S — Analizzatore Abitudini</title>
+    <title>Shelly Plug S — Habit Analyzer</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -141,15 +141,15 @@
 <body>
     <div class="container">
         <header>
-            <h1>Analisi Abitudini</h1>
+            <h1>Habit Analysis</h1>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <input type="file" id="csv-file" accept=".csv" style="display: none;" onchange="uploadCSV()">
-                <button onclick="document.getElementById('csv-file').click()" style="background-color: #2563eb;">Importa CSV</button>
+                <button onclick="document.getElementById('csv-file').click()" style="background-color: #2563eb;">Import CSV</button>
             </div>
         </header>
 
         <div id="main-content">
-            <div class="loading">Caricamento dati e analisi ML in corso...</div>
+            <div class="loading">Loading data and ML analysis in progress...</div>
         </div>
     </div>
 
@@ -171,9 +171,9 @@
                                     <line x1="12" y1="18" x2="12" y2="12"/>
                                     <polyline points="9 15 12 12 15 15"/>
                                 </svg>
-                                <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 8px 0; color: #111827;">Nessun dato disponibile</h3>
-                                <p style="font-size: 14px; color: #6b7280; max-width: 325px; margin: 0 0 20px 0;">Carica un file CSV di telemetria per visualizzare le statistiche, i grafici di presenza e l'analisi ML.</p>
-                                <button onclick="document.getElementById('csv-file').click()" style="background-color: #2563eb;">Seleziona File CSV</button>
+                                <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 8px 0; color: #111827;">No data available</h3>
+                                <p style="font-size: 14px; color: #6b7280; max-width: 325px; margin: 0 0 20px 0;">Upload a telemetry CSV file to view statistics, presence charts, and ML analysis.</p>
+                                <button onclick="document.getElementById('csv-file').click()" style="background-color: #2563eb;">Select CSV File</button>
                             </div>
                         `;
                         return;
@@ -182,7 +182,7 @@
                     renderDashboard(data);
                 })
                 .catch(err => {
-                    document.getElementById('main-content').innerHTML = '<div class="anomaly-item">Errore di comunicazione con il server.</div>';
+                    document.getElementById('main-content').innerHTML = '<div class="anomaly-item">Communication error with the server.</div>';
                 });
         }
 
@@ -194,7 +194,7 @@
 
             let anomaliesHtml = '';
             if (anomalies.length === 0) {
-                anomaliesHtml = '<p class="no-anomalies">✓ Nessuna anomalia rilevata nelle ultime letture.</p>';
+                anomaliesHtml = '<p class="no-anomalies">✓ No anomalies detected in the latest readings.</p>';
             } else {
                 anomalies.forEach(a => {
                     anomaliesHtml += `
@@ -215,17 +215,17 @@
             const content = `
                 <div class="grid-3" style="grid-template-columns: 1fr 1fr; margin-bottom: 24px;">
                     <div class="card">
-                        <div class="card-title" style="color: #dc2626;">Fasce di Presenza (In Casa)</div>
+                        <div class="card-title" style="color: #dc2626;">Presence Windows (At Home)</div>
                         <div class="card-value" style="font-size: 18px; color: #dc2626; margin-top: 8px;">${presence.active_windows}</div>
                     </div>
                     <div class="card">
-                        <div class="card-title" style="color: #059669;">Fasce di Assenza (Fuori Casa)</div>
+                        <div class="card-title" style="color: #059669;">Absence Windows (Out of Home)</div>
                         <div class="card-value" style="font-size: 18px; color: #059669; margin-top: 8px;">${presence.absence_windows}</div>
                     </div>
                 </div>
 
                 <div class="chart-box" style="margin-bottom: 24px;">
-                    <h2>Probabilità di Occupazione Domestica per Fascia Oraria</h2>
+                    <h2>Domestic Occupation Probability by Hour Slot</h2>
                     <canvas id="presenceCanvas" style="max-height: 300px;"></canvas>
                 </div>
             `;
@@ -247,7 +247,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Potenza Media (W)',
+                        label: 'Average Power (W)',
                         data: profile,
                         borderColor: '#2563eb',
                         backgroundColor: 'rgba(37, 99, 235, 0.05)',
@@ -287,7 +287,7 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Profilo Attivo',
+                            label: 'Active Profile',
                             data: highCentroid,
                             borderColor: '#dc2626',
                             borderWidth: 2,
@@ -295,7 +295,7 @@
                             fill: false
                         },
                         {
-                            label: 'Profilo Eco/Standby',
+                            label: 'Eco/Standby Profile',
                             data: lowCentroid,
                             borderColor: '#059669',
                             borderWidth: 2,
@@ -337,7 +337,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Probabilità Presenza (%)',
+                        label: 'Presence Probability (%)',
                         data: presenceProbabilities,
                         backgroundColor: presenceProbabilities.map(p => p >= 50.0 ? 'rgba(220, 38, 38, 0.6)' : 'rgba(5, 150, 105, 0.4)'),
                         borderColor: presenceProbabilities.map(p => p >= 50.0 ? '#dc2626' : '#059669'),
@@ -375,7 +375,7 @@
             
             const btn = document.querySelector('button[onclick*="csv-file"]');
             const originalText = btn.innerText;
-            btn.innerText = 'Caricamento...';
+            btn.innerText = 'Uploading...';
             btn.disabled = true;
             
             fetch('/api/upload', {
@@ -385,14 +385,14 @@
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    alert('File CSV importato con successo!');
+                    alert('CSV file imported successfully!');
                     loadDashboard();
                 } else {
-                    alert('Errore: ' + data.message);
+                    alert('Error: ' + data.message);
                 }
             })
             .catch(err => {
-                alert('Errore durante l\'importazione del file.');
+                alert('Error during file import.');
             })
             .finally(() => {
                 btn.innerText = originalText;
