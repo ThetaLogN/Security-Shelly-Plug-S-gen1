@@ -145,7 +145,7 @@ def analyze_habits():
 
     # Identifica le fasce orarie probabili di presenza e assenza
     probable_presence_hours = [h for h in range(24) if presence_probability[h] >= 50.0]
-    probable_absence_hours = [h for h in range(8, 20) if presence_probability[h] < 25.0]
+    probable_absence_hours = [h for h in range(8, 20) if presence_probability[h] < 35.0]
 
     def format_hours(hours_list):
         if not hours_list:
