@@ -1,0 +1,2 @@
+mosquitto_sub -h 74.161.73.178 -p 8883 -t "#" -v \
+    --cafile ca.crt --cert sub.crt --key sub.key

@@ -4,6 +4,7 @@ This chapter presents the Red Team simulation phase, in which a custom firmware 
 
 \noindent Subsequently, a Man-in-the-Middle (MITM) attack was executed to remotely inject the unauthorized firmware onto the target device without requiring physical access.
 
+
 \section{Development of the Malicious Firmware}
 The malicious firmware was developed using the \textbf{Mongoose OS framework}, an open-source IoT operating system specifically designed for resource-constrained microcontrollers such as the ESP8266. Choosing Mongoose OS was primarily motivated by the need to match the original Shelly firmware's ecosystem. This choice ensured full compatibility and a well-structured bundle ready for OTA delivery, while also providing native support for the \texttt{mos} CLI build toolchain, a built-in OTA infrastructure, and robust HTTP/MQTT libraries that simplified the development of a full-featured replacement firmware.
 
@@ -29,7 +30,7 @@ The malicious firmware was developed using the \textbf{Mongoose OS framework}, a
     \label{fig:mos_yaml}
 \end{figure}
 
-\subsection{Data Collection} %Verifica Ilenia da qui
+\subsection{Data Collection}
 The primary function of the malicious firmware is to perform \textbf{real-time profiling of the electrical parameters} measured by the device's onboard HLW8012 energy metering IC. The firmware interfaces with the HLW8012 via three GPIO pins: \texttt{CF} (GPIO~5) for active power pulses, \texttt{CF1} (GPIO~14) for voltage/current multiplexed pulses, and \texttt{SEL} (GPIO~12) for switching between voltage and current measurement modes.
 
 \medskip
@@ -53,7 +54,6 @@ The primary function of the malicious firmware is to perform \textbf{real-time p
     \caption{Voltage, current, and power acquisition functions from the malicious firmware (\texttt{main.c})}
     \label{fig:get_valori}
 \end{figure}
-%A qui
 
 
 \subsection{Behavioral Mechanisms of the Custom Firmware}
@@ -84,18 +84,25 @@ The actual exfiltration vector uses \textbf{unencrypted UDP datagrams} transmitt
 \end{verbatim}
 
 \subsubsection{C2 Server Infrastructure}
-On the server side, a Python-based \textbf{UDP listener} (\texttt{udpServer.py}) was deployed on port 9999 to receive and persist the exfiltrated data. The server implements a dual-storage backend:
+On the server side, a Python-based \textbf{UDP listener} (Figure \ref{fig:udp_server_code}) was deployed on port 9999 to receive and persist the exfiltrated data. The server implements a dual-storage backend:
 
 \begin{itemize}
     \item \textbf{MongoDB}: Each received JSON payload is enriched with server-side metadata (UTC timestamp and sender IP address) and inserted into a dedicated \texttt{telemetry} collection within the \texttt{iot\_data} database.
     \item \textbf{CSV file}: A parallel CSV log file is maintained for offline analysis and data export capabilities, with fields mapped to the JSON payload structure.
 \end{itemize}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Images/Fase2/UDPserver.png}
+    \caption{Python implementation of the UDP telemetry listener application}
+    \label{fig:udp_server_code}
+\end{figure}
+
 \noindent The server is deployed as a \textbf{systemd service} (\texttt{udp\_server.service}) to ensure persistent operation and automatic restart on failure.
 
 \begin{bashcode}
 [Unit]
-Description=UDP Server for IoT Telemetry
+Description=UDP Server for Shelly Plug S telemetry
 After=network.target mongod.service
 
 [Service]
@@ -113,7 +120,14 @@ RestartSec=5
 WantedBy=multi-user.target
 \end{bashcode}
 
-\noindent Figure~\ref{fig:mongodb} shows a query result from the MongoDB shell, displaying the successfully exfiltrated telemetry records.
+\noindent In particular, Figure~\ref{fig:ricezione} illustrates the live packet capture confirming network data reception, while Figure~\ref{fig:mongodb} shows the subsequent query result from the MongoDB shell, displaying the successfully exfiltrated telemetry records.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.80\linewidth]{Images/Fase2/RicezioneServerOK.png}
+    \caption{Capture on the remote server confirming the successful reception of incoming UDP telemetry streams on port 9999}
+    \label{fig:ricezione}
+\end{figure}
 
 \begin{figure}[H]
     \centering
@@ -122,7 +136,7 @@ WantedBy=multi-user.target
     \label{fig:mongodb}
 \end{figure}
 
-\subsubsection{MQTT Operation }
+\subsubsection{MQTT Operation}
 To ensure the compromise remains stealthy, the firmware replicates the standard MQTT (Message Queuing Telemetry Transport) communication patterns of the original Shelly Plug S. By reporting operational data to the expected broker, the firmware ensures the plug continues to function normally within the user's home automation dashboard, thereby avoiding suspicion. The MQTT implementation consists of two complementary publishing functions:
 
 \begin{itemize}
@@ -213,7 +227,25 @@ The malicious firmware was compiled and packaged as a \texttt{.zip} archive usin
 \end{figure}
 
 \subsection{How OTA Update Works on Shelly Plus S Gen 1}
-%To do. Explain how official OTA work, and how we can do a MITM attack
+The OTA update process of the Shelly Plug S (Gen 1) balances automated detection with manual execution. The complete lifecycle operates through the following structured phases:
+
+\begin{enumerate}    
+    \item \textbf{Update Checks}: Firmware update checks can be triggered either upon boot, upon the expiration of a 24-hour timer, or by clicking the "Check for new firmware" button on the web interface, which invokes the local \texttt{/ota/check} endpoint. When a check is initiated, the firmware module \texttt{shelly\_update.c} performs an HTTP GET request to the global Master Manifest URL (\url{http://api.shelly.cloud/files/firmware}).
+
+    \noindent To overcome the critical memory constraints of the ESP8266, the JSON payload is not stored in its entirety; instead, the Mongoose OS operating system executes an event-driven stream parsing directly on the network buffer, instantly discarding data from other models and isolating exclusively the \texttt{SHPLG-S} fields. Once extracted, the \texttt{version} and \texttt{url} (\url{http://firmware.shelly.cloud/gen1/SHPLG-S.zip}) strings are stored locally in a volatile RAM structure called \texttt{fwinfo}, which subsequently updates the local \texttt{/status} endpoint.
+    
+    \item \textbf{Update Notification}: For operational safety, even if a new firmware version is available, the device never downloads or installs it automatically. Instead, it updates its local diagnostic endpoint by setting the \texttt{"has\_update": true} flag and updating the \texttt{"new\_version"} string within the \texttt{/status} HTTP payload (Figure~\ref{fig:statusEndpoint}). Consequently, when the Web UI polls this endpoint, it dynamically renders the update notification icon for the user (Figure~\ref{fig:mitm_pre}).
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\linewidth]{Images/Fase2/statusEndpoint.jpg}
+        \caption{Shelly Plug S \texttt{/status} endpoint payload displaying available update details.}
+        \label{fig:statusEndpoint}
+    \end{figure}
+    
+    \item \textbf{Update Triggering}: Only when the user confirms the update by clicking the "Update Firmware Version" button, an HTTP GET request sent to the local endpoint \\ \texttt{/ota?update=true}. This directive instructs the microcontroller to fetch the URL stored in \texttt{fwinfo}, initiate the download, and proceed with the installation. 
+\end{enumerate}
+
 
 \subsection{Variant A: Classic MITM --- ARP Poisoning \& DNS Spoofing}
 The key characteristic of this attack is that the device is not forcibly updated; instead, the attack silently \emph{hijacks} the legitimate update process. Consequently, when the user clicks on "Update Firmware Version", believing it to be an official release, it causes the installation of our malicious firmware.
@@ -247,7 +279,7 @@ sudo dnsspoof -i wlo1 -f hosts.txt
     \end{bashcode}
 
     
-    \item \textbf{HTTP Server}: A Python HTTP server was launched on port 80 to serve the malicious firmware bundle (\texttt{SHPLG-S.zip}) from a directory structure that \emph{mirrors the expected Shelly cloud endpoint} (\texttt{/gen1/SHPLG-S.zip}). This ensures the device can download the file from the exact URL path it expects
+    \item \textbf{HTTP Server}: A Python HTTP server was launched on port 80 to serve the malicious firmware archive (\texttt{SHPLG-S.zip}) from a directory structure that \emph{mirrors the expected Shelly cloud endpoint} (\texttt{/gen1/SHPLG-S.zip}). This ensures the device can download the file from the exact URL path it expects
 
     \begin{bashcode}
 sudo python3 -m http.server 80
@@ -357,19 +389,106 @@ Both attack variants produce the same outcome: the device downloads, applies, an
 
 
 \section{Pattern Recognition \& User Behavior Analytics}
-Beyond the immediate security implications of unauthorized data exfiltration, the continuously collected power consumption data enables a more insidious form of surveillance: \textbf{semantic side-channel analysis}. By analyzing temporal patterns and power level variations, it becomes possible to infer detailed information about user habits, daily routines, and the types of appliances connected to the smart plug.
+Beyond the immediate security implications of unauthorized data exfiltration, the continuously collected power consumption data enables a more insidious form of surveillance. By analyzing temporal patterns and power level variations, it becomes possible to infer detailed information about user habits, daily routines, and the types of appliances connected to the smart plug.
 
 \medskip
-\noindent The telemetry data collected by the compromised device provides a high-resolution time series of power consumption, sampled every 60 seconds. This granularity is sufficient to perform the following types of behavioral inference:
+\noindent The telemetry data collected by the compromised device provides a high-resolution time series of power consumption, sampled every 60 seconds. This granularity is sufficient to perform various types of behavioral inference. In our case, the \textbf{Presence/Absence detection}.
 
+\medskip
+\noindent It is important to emphasize that the occupancy profiling implemented in this project represents only a baseline demonstration of the informations that can be extracted from such data. In a real-world attack scenario, more sophisticated user profiling can be achieved by leveraging advanced Artificial Intelligence and Machine Learning  models. 
+  
+\medskip
+\noindent In addition, this type of analysis highlighting the severe privacy implications of the IoT device.
+
+
+\subsection{Telemetry Dataset}
+The exfiltrated data are aggregated by the C2 listener into a structured CSV format. The logs are captured at a high temporal resolution (1-minute intervals), recording various parameters that provide a detailed representation of the electrical load. (Figure~\ref{fig:ml_dataset} shows a preview of the telemetry dataset).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{Images/Fase2/dataset.jpg}
+    \caption{A segment of the exfiltrated telemetry dataset, capturing timestamp, active power, voltage, current, and relay state at 1-minute intervals.}
+    \label{fig:ml_dataset}
+\end{figure}
+
+\noindent The most important fields of the dataset are:
 \begin{itemize}
-    \item \textbf{Presence/Absence detection}: A prolonged period of zero power consumption (relay on, but no load) or consistently low standby power can indicate that the user is away from home. Conversely, periodic load activation patterns reveal the user's daily schedule and presence habits.
-    
-    \item \textbf{Appliance fingerprinting}: Different electrical appliances exhibit characteristic power signatures. A resistive heating element (e.g., a kettle or space heater) produces a stable, high-wattage plateau, while a refrigerator compressor shows periodic on/off cycling with a distinctive inrush current spike. By matching observed power profiles against known appliance signatures, the attacker can determine \emph{which} type of device is connected.
-    
-    \item \textbf{Activity pattern inference}: Regular power consumption patterns at specific times of day (e.g., a coffee machine activated every morning at 7:00 AM, a desk lamp turned on at 9:00 PM) reveal the user's behavioral routines with a high degree of temporal precision.
-    
-    \item \textbf{Occupancy analytics}: The correlation between power events across multiple compromised devices in the same household can produce a comprehensive occupancy map, revealing not only \emph{when} the user is home, but also \emph{which rooms} are occupied and for how long.
+    \item \textbf{timestamp}.
+    \item \textbf{power}: active power consumption in Watts, which serves as the primary feature for behavior modeling.
+    \item \textbf{relay}: on/off.
 \end{itemize}
 
-\noindent This type of analysis transforms what appears to be innocuous energy metering data into a powerful surveillance tool, highlighting the severe privacy implications of IoT device compromise, even when the attacker does not gain direct access to cameras, microphones, or personal data.
+
+\subsection{Behavior Profiling and Occupancy Inference Engine}
+To extract user habits from the exfiltrated telemetry dataset, a specialized Python analysis engine (\texttt{analyzer.py}) was developed. The data-processing and behavior inference pipeline executes a step-by-step statistical analysis to reconstruct behavioral patterns from logs. The main stages of this pipeline work as follows:
+
+\begin{enumerate}
+    \item \textbf{File parsing}: The engine starts by reading the CSV to parsing the headers and extracting the values.
+    
+    \item \textbf{Grouping the values}: The engine groups the data by creating a nested dictionary structure named \texttt{daily\_hourly\_profiles}. In this dictionary, each date maps to a list of 24 sub-lists, one for each hour of the day. 
+
+    \item \textbf{Averaging the hourly consumption}:
+    To get a stable representation of the usage, the engine computes the average active power $P_{d, h}$ for each day $d$ and hour slot $h$ using an arithmetic mean:
+    \[
+    P_{d, h} = \begin{cases} 
+    \frac{1}{|R_{d, h}|} \sum_{p \in R_{d, h}} p & \text{if } |R_{d, h}| > 0 \\ 
+    0.0 & \text{if } |R_{d, h}| = 0 
+    \end{cases}
+    \]
+    where $R_{d, h}$ represents the set of power readings recorded during hour $h$ on day $d$, and $|R_{d, h}|$ is the number of samples in that hour. If no samples are found for a specific hour (for example, if the device was offline), the average defaults to \texttt{0.0} to prevent mathematical errors.
+
+    \item \textbf{Enforcing an active occupancy threshold}:
+    To separate the passive standby noise from active human presence, the engine establishes an active usage threshold of $30\text{ W}$. So, an hourly average above $30\text{ W}$ indicates that a significant load (such as a TV, kitchen appliance, or computer) was running, suggesting active appliance utilization and, consequently, user presence. 
+
+    \item \textbf{Calculating presence probability}:
+    For each hour slot $h \in [0, 23]$, the engine calculates the overall presence probability $P(h)$ across all $D$ recorded days in the dataset. 
+    
+    \medskip
+    \noindent Mathematically, the classification is treated as a simple boolean comparison. For every day $d$ and hour slot $h$, the engine checks if the average power $P_{d, h}$ is greater than $30\text{ W}$. The presence probability $P(h)$ for that hour slot is then calculated by dividing the number of days where this condition is met by the total number of recorded days $D$:
+    \[
+    P(h) = \frac{\text{Number of days where } P_{d, h} > 30\text{ W}}{D} \times 100
+    \]
+    
+    For example, if the active threshold of 30W is exceeded at 8:00 AM on 6 out of 10 total days, the presence probability for 8:00 AM will be $60\%$.
+
+    \item \textbf{Extracting behavior windows}:
+    Finally, the calculated probabilities are translated into clear behavior windows:
+    \begin{itemize}
+        \item \textbf{Presence Windows (At Home)}: Composed of all hours where the occupancy probability is high, defined as $P(h) \ge 50\%$.
+        \item \textbf{Absence Windows (Out of Home)}: Evaluated specifically within the typical active daytime window ($08:00$ to $20:00$), identifying hours where the occupancy probability is very low, defined as $P(h) < 25\%$.
+    \end{itemize}
+\end{enumerate}
+
+\noindent The complete Python implementation of the analyzer engine is shown in Figure~\ref{fig:ml_analyzer}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{Images/Fase2/Analyzer.png}
+    \caption{Python implementation of the user behavior analyzer and occupancy inference engine (\texttt{analyzer.py})}
+    \label{fig:ml_analyzer}
+\end{figure}
+
+\noindent To make these results readable, a formatting helper function (\texttt{format\_hours()}) merges discrete hour indices into contiguous intervals (For example, combining the hours 14, 15, and 16 into a single range \texttt{14:00-16:59}).
+
+
+\subsection{C2 Web Dashboard and Habits Visualization}
+To expose the inferred user behaviors, a Flask-based web application was implemented. The backend provides two main API routes: \texttt{/api/habits} (which triggers the habits analyzer and returns the JSON payload) and \texttt{/api/upload} (allowing the attacker to import new telemetry files dynamically). (Python implementation of the Flask application is shown in Figure~\ref{fig:ml_flask}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\linewidth]{Images/Fase2/FlaskApp.png}
+    \caption{Flask web server backend implementation (\texttt{app.py}) hosting the habits analytics API routes.}
+    \label{fig:ml_flask}
+\end{figure}
+
+\noindent On the frontend, a clean, responsive HTML dashboard (\texttt{index.html}) interacts with these endpoints. The dashboard renders the presence and absence windows inside dedicated notification cards (colored in red and green respectively to represent presence and absence), and displays a bar chart indicating the hourly occupancy probability. In this case as well, red is used to denote a high probability ($\ge 50\%$), while green indicates a low probability. This information can be leveraged to understand the user's daily habits at home.
+(Figure~\ref{fig:ml_frontend}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{Images/Fase2/frontend.jpg}
+    \caption{Web dashboard displaying the inferred presence/absence probablity}
+    \label{fig:ml_frontend}
+\end{figure}
+
+\noindent This semantic analysis demonstrates that the compromise of even a simple IoT device like a smart plug leads to severe privacy issues. Without accessing local cameras or personal files, an attacker can precisely reconstruct when the victim is at home, identifying daily routines and periods of absence.

@@ -1,0 +1,118 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\@writefile{toc}{\contentsline {chapter}{\numberline {1}Phase 1: Physical Access, Firmware Extraction \& Analysis}{5}{chapter.1}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{toc}{\contentsline {section}{\numberline {1.1}Features and Functionality of the Device}{5}{section.1.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.1}{\ignorespaces Shelly Plug S native web interface home page}}{6}{figure.caption.7}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:shelly_web_ui}{{1.1}{6}{Shelly Plug S native web interface home page}{figure.caption.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.2}{\ignorespaces Weekly schedule configuration page in the local Web UI}}{6}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:shelly_schedule}{{1.2}{6}{Weekly schedule configuration page in the local Web UI}{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.3}{\ignorespaces Max power protection settings in the local Web UI}}{7}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:shelly_safety}{{1.3}{7}{Max power protection settings in the local Web UI}{figure.caption.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.4}{\ignorespaces General settings menu in the local Web UI}}{7}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:shelly_settings}{{1.4}{7}{General settings menu in the local Web UI}{figure.caption.10}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1.1}{\ignorespaces Official technical specifications of the Shelly Plug S}}{8}{table.caption.11}\protected@file@percent }
+\newlabel{tab:technical_specs}{{1.1}{8}{Official technical specifications of the Shelly Plug S}{table.caption.11}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.2}PCB Analysis and Components}{8}{section.1.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.5}{\ignorespaces Shelly Plug S PCB}}{9}{figure.caption.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1.3}Firmware Analysis and Dumping}{9}{section.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.1}Identification of the UART Interface}{10}{subsection.1.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.6}{\ignorespaces Jumper cables held manually in place}}{10}{figure.caption.13}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.7}{\ignorespaces Communication setup between the PC and the target}}{11}{figure.caption.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.2}Firmware Extraction (Dumping)}{11}{subsection.1.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.3}Static Analysis of the Firmware}{12}{subsection.1.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.8}{\ignorespaces Execution of the binwalk tool to extract the firmware file system}}{13}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:binwalk_extract}{{1.8}{13}{Execution of the binwalk tool to extract the firmware file system}{figure.caption.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.9}{\ignorespaces Contents of the extracted directory showing the web interface index.html}}{13}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:binwalk_dir}{{1.9}{13}{Contents of the extracted directory showing the web interface index.html}{figure.caption.16}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.10}{\ignorespaces GET result of the official firmware list endpoint}}{19}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:url_firmware_list}{{1.10}{19}{GET result of the official firmware list endpoint}{figure.caption.17}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.4}Analysis of the OTA Update Mechanism}{19}{subsection.1.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1.4}MQTT: Insecure Protocol Demonstration}{20}{section.1.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.11}{\ignorespaces Internet \& Security settings menu in the local Web UI}}{20}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:shelly_net_sec}{{1.11}{20}{Internet \& Security settings menu in the local Web UI}{figure.caption.18}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.12}{\ignorespaces Advanced Developer Settings demonstrating the lack of MQTT encryption options}}{21}{figure.caption.19}\protected@file@percent }
+\newlabel{fig:shelly_mqtt_config}{{1.12}{21}{Advanced Developer Settings demonstrating the lack of MQTT encryption options}{figure.caption.19}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.13}{\ignorespaces Sniffed MQTT packet showing active power consumption in plaintext}}{21}{figure.caption.20}\protected@file@percent }
+\newlabel{fig:wireshark_power}{{1.13}{21}{Sniffed MQTT packet showing active power consumption in plaintext}{figure.caption.20}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.14}{\ignorespaces Sniffed MQTT packet showing cumulative energy in plaintext}}{22}{figure.caption.21}\protected@file@percent }
+\newlabel{fig:wireshark_energy}{{1.14}{22}{Sniffed MQTT packet showing cumulative energy in plaintext}{figure.caption.21}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.15}{\ignorespaces Sniffed MQTT packet showing the relay state command ("on") in plaintext}}{22}{figure.caption.22}\protected@file@percent }
+\newlabel{fig:wireshark_state}{{1.15}{22}{Sniffed MQTT packet showing the relay state command ("on") in plaintext}{figure.caption.22}{}}
+\gdef \LT@i {\LT@entry 
+    {1}{67.6985pt}\LT@entry 
+    {1}{117.45233pt}\LT@entry 
+    {1}{152.27394pt}\LT@entry 
+    {1}{152.27394pt}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.5}Threat Modeling}{23}{section.1.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1.2}{\ignorespaces Threat Modeling and STRIDE Matrix for Shelly Plug S Gen 1}}{23}{table.1.2}\protected@file@percent }
+\newlabel{tab:stride_matrix}{{1.2}{23}{Threat Modeling and STRIDE Matrix for Shelly Plug S Gen 1}{table.1.2}{}}
+\@setckpt{Chapters/Fase1}{
+\setcounter{page}{25}
+\setcounter{equation}{0}
+\setcounter{enumi}{2}
+\setcounter{enumii}{0}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{0}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{0}
+\setcounter{chapter}{1}
+\setcounter{section}{5}
+\setcounter{subsection}{0}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{15}
+\setcounter{table}{2}
+\setcounter{@todonotes@numberoftodonotes}{0}
+\setcounter{caption@flags}{0}
+\setcounter{continuedfloat}{0}
+\setcounter{KVtest}{0}
+\setcounter{subfigure}{0}
+\setcounter{subfigure@save}{0}
+\setcounter{lofdepth}{1}
+\setcounter{subtable}{0}
+\setcounter{subtable@save}{0}
+\setcounter{lotdepth}{1}
+\setcounter{lstnumber}{1}
+\setcounter{float@type}{32}
+\setcounter{parentequation}{0}
+\setcounter{nprt@mantissa@digitsbefore}{0}
+\setcounter{nprt@mantissa@digitsafter}{0}
+\setcounter{nprt@exponent@digitsbefore}{0}
+\setcounter{nprt@exponent@digitsafter}{0}
+\setcounter{nprt@digitsfirstblock}{0}
+\setcounter{nprt@blockcnt}{0}
+\setcounter{nprt@cntprint}{0}
+\setcounter{section@level}{1}
+\setcounter{Item}{5}
+\setcounter{Hfootnote}{0}
+\setcounter{bookmark@seq@number}{14}
+\setcounter{LT@tables}{1}
+\setcounter{LT@chunks}{5}
+\setcounter{FancyVerbLine}{0}
+\setcounter{linenumber}{1}
+\setcounter{LN@truepage}{25}
+\setcounter{FancyVerbWriteLine}{0}
+\setcounter{FancyVerbBufferIndex}{0}
+\setcounter{FancyVerbBufferLength}{0}
+\setcounter{FancyVerbBufferLine}{0}
+\setcounter{FV@oldbufferlength}{0}
+\setcounter{FV@TrueTabGroupLevel}{0}
+\setcounter{FV@TrueTabCounter}{0}
+\setcounter{FV@HighlightLinesStart}{0}
+\setcounter{FV@HighlightLinesStop}{0}
+\setcounter{FancyVerbLineBreakLast}{0}
+\setcounter{FV@BreakBufferDepth}{0}
+\setcounter{minted@FancyVerbLineTemp}{0}
+\setcounter{minted@pygmentizecounter}{0}
+\setcounter{listing}{0}
+\setcounter{tcbbreakpart}{0}
+\setcounter{tcblayer}{0}
+\setcounter{tcolorbox@number}{0}
+\setcounter{tcblisting}{0}
+\setcounter{lstlisting}{0}
+}

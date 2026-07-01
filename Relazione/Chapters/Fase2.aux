@@ -1,0 +1,139 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\@writefile{toc}{\contentsline {chapter}{\numberline {2}Phase 2: Implementation \& Injection of Malicious Firmware}{25}{chapter.2}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{toc}{\contentsline {section}{\numberline {2.1}Development of the Malicious Firmware}{25}{section.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.1}{\ignorespaces Mongoose OS project structure for the malicious firmware}}{26}{figure.caption.23}\protected@file@percent }
+\newlabel{fig:redfw_structure}{{2.1}{26}{Mongoose OS project structure for the malicious firmware}{figure.caption.23}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.2}{\ignorespaces Mongoose OS build manifest (\texttt  {mos.yml}) defining hardware parameters, libraries, and C2 server configuration}}{27}{figure.caption.24}\protected@file@percent }
+\newlabel{fig:mos_yaml}{{2.2}{27}{Mongoose OS build manifest (\texttt {mos.yml}) defining hardware parameters, libraries, and C2 server configuration}{figure.caption.24}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.1}Data Collection}{27}{subsection.2.1.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.3}{\ignorespaces Voltage, current, and power acquisition functions from the malicious firmware (\texttt  {main.c})}}{28}{figure.caption.25}\protected@file@percent }
+\newlabel{fig:get_valori}{{2.3}{28}{Voltage, current, and power acquisition functions from the malicious firmware (\texttt {main.c})}{figure.caption.25}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.2}Behavioral Mechanisms of the Custom Firmware}{29}{subsection.2.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{UDP Covert Exfiltration Channel}{29}{section*.26}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.4}{\ignorespaces UDP exfiltration function: telemetry payload construction and transmission to the C2 server}}{30}{figure.caption.27}\protected@file@percent }
+\newlabel{fig:send_udp}{{2.4}{30}{UDP exfiltration function: telemetry payload construction and transmission to the C2 server}{figure.caption.27}{}}
+\@writefile{toc}{\contentsline {subsubsection}{C2 Server Infrastructure}{30}{section*.28}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.5}{\ignorespaces Python implementation of the UDP telemetry listener application}}{31}{figure.caption.29}\protected@file@percent }
+\newlabel{fig:udp_server_code}{{2.5}{31}{Python implementation of the UDP telemetry listener application}{figure.caption.29}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.6}{\ignorespaces Capture on the remote server confirming the successful reception of incoming UDP telemetry streams on port 9999}}{32}{figure.caption.30}\protected@file@percent }
+\newlabel{fig:ricezione}{{2.6}{32}{Capture on the remote server confirming the successful reception of incoming UDP telemetry streams on port 9999}{figure.caption.30}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.7}{\ignorespaces Exfiltrated telemetry data stored in MongoDB, queried from the \texttt  {iot\_data.telemetry} collection}}{33}{figure.caption.31}\protected@file@percent }
+\newlabel{fig:mongodb}{{2.7}{33}{Exfiltrated telemetry data stored in MongoDB, queried from the \texttt {iot\_data.telemetry} collection}{figure.caption.31}{}}
+\@writefile{toc}{\contentsline {subsubsection}{MQTT Operation}{33}{section*.32}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.8}{\ignorespaces MQTT \texttt  {publish\_status()} function: relay state and device status broadcasting}}{34}{figure.caption.33}\protected@file@percent }
+\newlabel{fig:publish_status}{{2.8}{34}{MQTT \texttt {publish\_status()} function: relay state and device status broadcasting}{figure.caption.33}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.9}{\ignorespaces MQTT \texttt  {publish\_energy()} function: power, energy, and temperature telemetry publishing}}{35}{figure.caption.34}\protected@file@percent }
+\newlabel{fig:publish_energy}{{2.9}{35}{MQTT \texttt {publish\_energy()} function: power, energy, and temperature telemetry publishing}{figure.caption.34}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Web Interface and Deception}{36}{section*.35}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.10}{\ignorespaces The malicious firmware creates a \texttt  {ShellyPlugS-Setup} access point for initial configuration}}{36}{figure.caption.36}\protected@file@percent }
+\newlabel{fig:wifi_setup}{{2.10}{36}{The malicious firmware creates a \texttt {ShellyPlugS-Setup} access point for initial configuration}{figure.caption.36}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.11}{\ignorespaces Embedded web interface of the malicious firmware, designed to replicate the original Shelly Plug S UI}}{37}{figure.caption.37}\protected@file@percent }
+\newlabel{fig:redfw_ui}{{2.11}{37}{Embedded web interface of the malicious firmware, designed to replicate the original Shelly Plug S UI}{figure.caption.37}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.2}Man-in-the-Middle (MITM) Attack}{37}{section.2.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.12}{\ignorespaces Pre-attack state: original Shelly firmware UI showing the current version (v1.10.0) and available update (v1.14.0)}}{38}{figure.caption.38}\protected@file@percent }
+\newlabel{fig:mitm_pre}{{2.12}{38}{Pre-attack state: original Shelly firmware UI showing the current version (v1.10.0) and available update (v1.14.0)}{figure.caption.38}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.1}How OTA Update Works on Shelly Plus S Gen 1}{38}{subsection.2.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.13}{\ignorespaces Shelly Plug S \texttt  {/status} endpoint payload displaying available update details.}}{39}{figure.caption.39}\protected@file@percent }
+\newlabel{fig:statusEndpoint}{{2.13}{39}{Shelly Plug S \texttt {/status} endpoint payload displaying available update details}{figure.caption.39}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.2}Variant A: Classic MITM --- ARP Poisoning \& DNS Spoofing}{39}{subsection.2.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Attack Infrastructure}{39}{section*.40}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.14}{\ignorespaces Variant A: ARP poisoning toward the device (top-left) and toward the gateway (bottom-left), DNS spoofing (top-right), and rogue HTTP server with the malicious firmware bundle (bottom-right)}}{41}{figure.caption.41}\protected@file@percent }
+\newlabel{fig:mitm_setup}{{2.14}{41}{Variant A: ARP poisoning toward the device (top-left) and toward the gateway (bottom-left), DNS spoofing (top-right), and rogue HTTP server with the malicious firmware bundle (bottom-right)}{figure.caption.41}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Attack Execution and Results}{41}{section*.42}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.15}{\ignorespaces Variant A: the DNS query for \texttt  {firmware.shelly.cloud} is intercepted, and the device downloads the malicious firmware from the server (bottom-right)}}{42}{figure.caption.43}\protected@file@percent }
+\newlabel{fig:mitm_dns_intercept}{{2.15}{42}{Variant A: the DNS query for \texttt {firmware.shelly.cloud} is intercepted, and the device downloads the malicious firmware from the server (bottom-right)}{figure.caption.43}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.3}Variant B: Direct OTA Endpoint Exploitation}{42}{subsection.2.2.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.16}{\ignorespaces Snapshot of the Official Shelly Gen 1 API Documentation}}{43}{figure.caption.44}\protected@file@percent }
+\newlabel{fig:OtaDocumentation}{{2.16}{43}{Snapshot of the Official Shelly Gen 1 API Documentation}{figure.caption.44}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Attack Execution}{43}{section*.45}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.17}{\ignorespaces Variant B: the \texttt  {curl} command directly instructs the device to download firmware from the attacker's server. The bottom pane shows the rogue HTTP server ready to serve the malicious bundle}}{44}{figure.caption.46}\protected@file@percent }
+\newlabel{fig:mitm_trigger}{{2.17}{44}{Variant B: the \texttt {curl} command directly instructs the device to download firmware from the attacker's server. The bottom pane shows the rogue HTTP server ready to serve the malicious bundle}{figure.caption.46}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.18}{\ignorespaces Variant B result: the device confirms the update (\texttt  {"status":"updating"}) and the HTTP server logs the firmware download (HTTP 200)}}{45}{figure.caption.47}\protected@file@percent }
+\newlabel{fig:mitm_response}{{2.18}{45}{Variant B result: the device confirms the update (\texttt {"status":"updating"}) and the HTTP server logs the firmware download (HTTP 200)}{figure.caption.47}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.4}Post-Injection Results}{45}{subsection.2.2.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.19}{\ignorespaces Post-injection the device serves the malicious firmware's web interface, confirming successful firmware replacement}}{46}{figure.caption.48}\protected@file@percent }
+\newlabel{fig:mitm_post}{{2.19}{46}{Post-injection the device serves the malicious firmware's web interface, confirming successful firmware replacement}{figure.caption.48}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.20}{\ignorespaces MQTT telemetry captured via \texttt  {mosquitto\_sub}, showing live power, energy, and temperature readings from the compromised device}}{46}{figure.caption.49}\protected@file@percent }
+\newlabel{fig:mqtt_redfw}{{2.20}{46}{MQTT telemetry captured via \texttt {mosquitto\_sub}, showing live power, energy, and temperature readings from the compromised device}{figure.caption.49}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.3}Pattern Recognition \& User Behavior Analytics}{47}{section.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.1}Telemetry Dataset}{47}{subsection.2.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.21}{\ignorespaces A segment of the exfiltrated telemetry dataset, capturing timestamp, active power, voltage, current, and relay state at 1-minute intervals.}}{47}{figure.caption.50}\protected@file@percent }
+\newlabel{fig:ml_dataset}{{2.21}{47}{A segment of the exfiltrated telemetry dataset, capturing timestamp, active power, voltage, current, and relay state at 1-minute intervals}{figure.caption.50}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.2}Behavior Profiling and Occupancy Inference Engine}{48}{subsection.2.3.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.22}{\ignorespaces Python implementation of the user behavior analyzer and occupancy inference engine (\texttt  {analyzer.py})}}{50}{figure.caption.51}\protected@file@percent }
+\newlabel{fig:ml_analyzer}{{2.22}{50}{Python implementation of the user behavior analyzer and occupancy inference engine (\texttt {analyzer.py})}{figure.caption.51}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.3}C2 Web Dashboard and Habits Visualization}{51}{subsection.2.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.23}{\ignorespaces Flask web server backend implementation (\texttt  {app.py}) hosting the habits analytics API routes.}}{51}{figure.caption.52}\protected@file@percent }
+\newlabel{fig:ml_flask}{{2.23}{51}{Flask web server backend implementation (\texttt {app.py}) hosting the habits analytics API routes}{figure.caption.52}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.24}{\ignorespaces Web dashboard displaying the inferred presence/absence probablity}}{52}{figure.caption.53}\protected@file@percent }
+\newlabel{fig:ml_frontend}{{2.24}{52}{Web dashboard displaying the inferred presence/absence probablity}{figure.caption.53}{}}
+\@setckpt{Chapters/Fase2}{
+\setcounter{page}{53}
+\setcounter{equation}{0}
+\setcounter{enumi}{6}
+\setcounter{enumii}{0}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{0}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{3}
+\setcounter{subsection}{3}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{24}
+\setcounter{table}{0}
+\setcounter{@todonotes@numberoftodonotes}{0}
+\setcounter{caption@flags}{2}
+\setcounter{continuedfloat}{0}
+\setcounter{KVtest}{0}
+\setcounter{subfigure}{0}
+\setcounter{subfigure@save}{0}
+\setcounter{lofdepth}{1}
+\setcounter{subtable}{0}
+\setcounter{subtable@save}{0}
+\setcounter{lotdepth}{1}
+\setcounter{lstnumber}{1}
+\setcounter{float@type}{32}
+\setcounter{parentequation}{0}
+\setcounter{nprt@mantissa@digitsbefore}{0}
+\setcounter{nprt@mantissa@digitsafter}{0}
+\setcounter{nprt@exponent@digitsbefore}{0}
+\setcounter{nprt@exponent@digitsafter}{0}
+\setcounter{nprt@digitsfirstblock}{0}
+\setcounter{nprt@blockcnt}{0}
+\setcounter{nprt@cntprint}{0}
+\setcounter{section@level}{2}
+\setcounter{Item}{27}
+\setcounter{Hfootnote}{0}
+\setcounter{bookmark@seq@number}{34}
+\setcounter{LT@tables}{1}
+\setcounter{LT@chunks}{5}
+\setcounter{FancyVerbLine}{0}
+\setcounter{linenumber}{1}
+\setcounter{LN@truepage}{53}
+\setcounter{FancyVerbWriteLine}{0}
+\setcounter{FancyVerbBufferIndex}{0}
+\setcounter{FancyVerbBufferLength}{0}
+\setcounter{FancyVerbBufferLine}{0}
+\setcounter{FV@oldbufferlength}{0}
+\setcounter{FV@TrueTabGroupLevel}{0}
+\setcounter{FV@TrueTabCounter}{0}
+\setcounter{FV@HighlightLinesStart}{0}
+\setcounter{FV@HighlightLinesStop}{0}
+\setcounter{FancyVerbLineBreakLast}{0}
+\setcounter{FV@BreakBufferDepth}{0}
+\setcounter{minted@FancyVerbLineTemp}{0}
+\setcounter{minted@pygmentizecounter}{7}
+\setcounter{listing}{0}
+\setcounter{tcbbreakpart}{0}
+\setcounter{tcblayer}{0}
+\setcounter{tcolorbox@number}{0}
+\setcounter{tcblisting}{0}
+\setcounter{lstlisting}{0}
+}

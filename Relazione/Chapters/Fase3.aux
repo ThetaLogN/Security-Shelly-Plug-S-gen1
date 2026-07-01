@@ -1,0 +1,129 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\@writefile{toc}{\contentsline {chapter}{\numberline {3}Phase 3: Hardening \& Mitigation}{53}{chapter.3}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces Web interface of the hardened firmware, preserving the same look and feel as the original Shelly UI while adding secure OTA update capabilities}}{54}{figure.caption.54}\protected@file@percent }
+\newlabel{fig:bluefw_ui}{{3.1}{54}{Web interface of the hardened firmware, preserving the same look and feel as the original Shelly UI while adding secure OTA update capabilities}{figure.caption.54}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.1}Ensuring Integrity: Secure Update Implementation}{54}{section.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1.1}Firmware Signing}{55}{subsection.3.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Key Pair Generation}{55}{section*.55}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces RSA-2048 key pair generation script (\texttt  {key.py})}}{55}{figure.caption.56}\protected@file@percent }
+\newlabel{fig:key_gen}{{3.2}{55}{RSA-2048 key pair generation script (\texttt {key.py})}{figure.caption.56}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Signing Process}{56}{section*.57}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.3}{\ignorespaces Firmware signing script (\texttt  {signature.py}): computes the SHA-256 hash, signs it with RSA-2048 PKCS\#1 v1.5, and appends the signature to the binary.}}{57}{figure.caption.58}\protected@file@percent }
+\newlabel{fig:firma_fw}{{3.3}{57}{Firmware signing script (\texttt {signature.py}): computes the SHA-256 hash, signs it with RSA-2048 PKCS\#1 v1.5, and appends the signature to the binary}{figure.caption.58}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1.2}Signing Verification}{58}{subsection.3.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Public Key Embedding}{58}{section*.59}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.4}{\ignorespaces Public key for OTA verification and TLS certificates for MQTTS, all embedded in the firmware source code as \texttt  {PROGMEM} constants}}{58}{figure.caption.60}\protected@file@percent }
+\newlabel{fig:chiavi}{{3.4}{58}{Public key for OTA verification and TLS certificates for MQTTS, all embedded in the firmware source code as \texttt {PROGMEM} constants}{figure.caption.60}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Verification Handler}{59}{section*.61}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.5}{\ignorespaces OTA signature verification handler}}{59}{figure.caption.62}\protected@file@percent }
+\newlabel{fig:verifica_firma}{{3.5}{59}{OTA signature verification handler}{figure.caption.62}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Demonstration: Successful Signed Update}{60}{section*.63}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.6}{\ignorespaces Settings page of the hardened firmware showing the 'Firmware Update (OTA)' option}}{60}{figure.caption.64}\protected@file@percent }
+\newlabel{fig:ota_settings}{{3.6}{60}{Settings page of the hardened firmware showing the 'Firmware Update (OTA)' option}{figure.caption.64}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.7}{\ignorespaces Secure OTA update page allow the user selects a signed \texttt  {.bin} file for upload}}{61}{figure.caption.65}\protected@file@percent }
+\newlabel{fig:ota_page}{{3.7}{61}{Secure OTA update page allow the user selects a signed \texttt {.bin} file for upload}{figure.caption.65}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.8}{\ignorespaces The signed firmware \texttt  {ShellyPlugS.ino\_firmato.bin} is being transmitted to the device}}{61}{figure.caption.66}\protected@file@percent }
+\newlabel{fig:ota_uploading}{{3.8}{61}{The signed firmware \texttt {ShellyPlugS.ino\_firmato.bin} is being transmitted to the device}{figure.caption.66}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.9}{\ignorespaces The device confirms the update}}{62}{figure.caption.67}\protected@file@percent }
+\newlabel{fig:ota_success}{{3.9}{62}{The device confirms the update}{figure.caption.67}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Demonstration: Rejected Unsigned Firmware}{62}{section*.68}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.10}{\ignorespaces The unsigned firmware \texttt  {ShellyPlugS\_3.ino.bin} is being transmitted to the device}}{62}{figure.caption.69}\protected@file@percent }
+\newlabel{fig:ota_error1}{{3.10}{62}{The unsigned firmware \texttt {ShellyPlugS\_3.ino.bin} is being transmitted to the device}{figure.caption.69}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.11}{\ignorespaces The device correctly identifies that the uploaded binary does not carry a valid signature and refuses to apply the update, responding with an error message}}{63}{figure.caption.70}\protected@file@percent }
+\newlabel{fig:ota_error2}{{3.11}{63}{The device correctly identifies that the uploaded binary does not carry a valid signature and refuses to apply the update, responding with an error message}{figure.caption.70}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.2}Ensuring Confidentiality and Authenticity}{63}{section.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.1}Secure MQTT (MQTTS)}{63}{subsection.3.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.12}{\ignorespaces Secure client initialization using \texttt  {BearSSL::WiFiClientSecure}, with the \texttt  {PubSubClient} instance layered on top of it to handle encrypted MQTT traffic.}}{64}{figure.caption.71}\protected@file@percent }
+\newlabel{fig:mqtts0}{{3.12}{64}{Secure client initialization using \texttt {BearSSL::WiFiClientSecure}, with the \texttt {PubSubClient} instance layered on top of it to handle encrypted MQTT traffic}{figure.caption.71}{}}
+\@writefile{toc}{\contentsline {subsubsection}{NTP Synchronization}{64}{section*.72}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{TLS Configuration}{64}{section*.73}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.13}{\ignorespaces NTP synchronization and mTLS configuration}}{65}{figure.caption.74}\protected@file@percent }
+\newlabel{fig:mqtts1}{{3.13}{65}{NTP synchronization and mTLS configuration}{figure.caption.74}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Mitigation Effectiveness}{65}{section*.75}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.2}Mutual Authentication (mTLS)}{66}{subsection.3.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Certificate Hierarchy and Generation}{66}{section*.76}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.14}{\ignorespaces Certificate directory structure: separate directories for CA, Broker, Client (Shelly device), and Subscriber, each containing its certificate (\texttt  {.crt}), private key (\texttt  {.key}), and CSR (\texttt  {.csr})}}{67}{figure.caption.77}\protected@file@percent }
+\newlabel{fig:certificati}{{3.14}{67}{Certificate directory structure: separate directories for CA, Broker, Client (Shelly device), and Subscriber, each containing its certificate (\texttt {.crt}), private key (\texttt {.key}), and CSR (\texttt {.csr})}{figure.caption.77}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Mosquitto Broker Configuration}{68}{section*.78}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Subscribing with mTLS}{68}{section*.79}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.15}{\ignorespaces MQTTS telemetry received via \texttt  {mosquitto\_sub} with mTLS}}{69}{figure.caption.80}\protected@file@percent }
+\newlabel{fig:mosquitto_sub_mqtts}{{3.15}{69}{MQTTS telemetry received via \texttt {mosquitto\_sub} with mTLS}{figure.caption.80}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.16}{\ignorespaces Extended MQTTS session showing relay status changes and continuous telemetry from the Shelly device}}{70}{figure.caption.81}\protected@file@percent }
+\newlabel{fig:mosquitto_sub_mqtts2}{{3.16}{70}{Extended MQTTS session showing relay status changes and continuous telemetry from the Shelly device}{figure.caption.81}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Wireshark Verification: Encrypted Traffic}{70}{section*.82}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.17}{\ignorespaces Wireshark capture of MQTTS traffic}}{71}{figure.caption.83}\protected@file@percent }
+\newlabel{fig:wire_mqtts}{{3.17}{71}{Wireshark capture of MQTTS traffic}{figure.caption.83}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.18}{\ignorespaces The hex dump confirms that the TLS-encrypted payload is completely opaque: no MQTT topic names, power values, or relay states are visible in the captured data}}{72}{figure.caption.84}\protected@file@percent }
+\newlabel{fig:wire_mqtts2}{{3.18}{72}{The hex dump confirms that the TLS-encrypted payload is completely opaque: no MQTT topic names, power values, or relay states are visible in the captured data}{figure.caption.84}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.19}{\ignorespaces Full Wireshark session overview}}{72}{figure.caption.85}\protected@file@percent }
+\newlabel{fig:wire_mqtts3}{{3.19}{72}{Full Wireshark session overview}{figure.caption.85}{}}
+\@setckpt{Chapters/Fase3}{
+\setcounter{page}{74}
+\setcounter{equation}{0}
+\setcounter{enumi}{4}
+\setcounter{enumii}{4}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{0}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{0}
+\setcounter{chapter}{3}
+\setcounter{section}{2}
+\setcounter{subsection}{2}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{19}
+\setcounter{table}{0}
+\setcounter{@todonotes@numberoftodonotes}{0}
+\setcounter{caption@flags}{2}
+\setcounter{continuedfloat}{0}
+\setcounter{KVtest}{0}
+\setcounter{subfigure}{0}
+\setcounter{subfigure@save}{0}
+\setcounter{lofdepth}{1}
+\setcounter{subtable}{0}
+\setcounter{subtable@save}{0}
+\setcounter{lotdepth}{1}
+\setcounter{lstnumber}{1}
+\setcounter{float@type}{32}
+\setcounter{parentequation}{0}
+\setcounter{nprt@mantissa@digitsbefore}{0}
+\setcounter{nprt@mantissa@digitsafter}{0}
+\setcounter{nprt@exponent@digitsbefore}{0}
+\setcounter{nprt@exponent@digitsafter}{0}
+\setcounter{nprt@digitsfirstblock}{0}
+\setcounter{nprt@blockcnt}{0}
+\setcounter{nprt@cntprint}{0}
+\setcounter{section@level}{3}
+\setcounter{Item}{50}
+\setcounter{Hfootnote}{0}
+\setcounter{bookmark@seq@number}{54}
+\setcounter{LT@tables}{1}
+\setcounter{LT@chunks}{5}
+\setcounter{FancyVerbLine}{0}
+\setcounter{linenumber}{1}
+\setcounter{LN@truepage}{74}
+\setcounter{FancyVerbWriteLine}{0}
+\setcounter{FancyVerbBufferIndex}{0}
+\setcounter{FancyVerbBufferLength}{0}
+\setcounter{FancyVerbBufferLine}{0}
+\setcounter{FV@oldbufferlength}{0}
+\setcounter{FV@TrueTabGroupLevel}{0}
+\setcounter{FV@TrueTabCounter}{0}
+\setcounter{FV@HighlightLinesStart}{0}
+\setcounter{FV@HighlightLinesStop}{0}
+\setcounter{FancyVerbLineBreakLast}{0}
+\setcounter{FV@BreakBufferDepth}{0}
+\setcounter{minted@FancyVerbLineTemp}{0}
+\setcounter{minted@pygmentizecounter}{15}
+\setcounter{listing}{0}
+\setcounter{tcbbreakpart}{0}
+\setcounter{tcblayer}{0}
+\setcounter{tcolorbox@number}{0}
+\setcounter{tcblisting}{0}
+\setcounter{lstlisting}{0}
+}

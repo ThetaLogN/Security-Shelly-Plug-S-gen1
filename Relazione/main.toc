@@ -1,0 +1,55 @@
+\contentsline {chapter}{Contents}{1}{chapter*.3}%
+\contentsline {chapter}{Introduction}{3}{chapter*.4}%
+\contentsline {section}{Scenario and Motivations}{3}{section*.5}%
+\contentsline {section}{Objectives and Methodology of Analysis}{3}{section*.6}%
+\contentsline {chapter}{\numberline {1}Phase 1: Physical Access, Firmware Extraction \& Analysis}{5}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Features and Functionality of the Device}{5}{section.1.1}%
+\contentsline {section}{\numberline {1.2}PCB Analysis and Components}{8}{section.1.2}%
+\contentsline {section}{\numberline {1.3}Firmware Analysis and Dumping}{9}{section.1.3}%
+\contentsline {subsection}{\numberline {1.3.1}Identification of the UART Interface}{10}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.2}Firmware Extraction (Dumping)}{11}{subsection.1.3.2}%
+\contentsline {subsection}{\numberline {1.3.3}Static Analysis of the Firmware}{12}{subsection.1.3.3}%
+\contentsline {subsection}{\numberline {1.3.4}Analysis of the OTA Update Mechanism}{19}{subsection.1.3.4}%
+\contentsline {section}{\numberline {1.4}MQTT: Insecure Protocol Demonstration}{20}{section.1.4}%
+\contentsline {section}{\numberline {1.5}Threat Modeling}{23}{section.1.5}%
+\contentsline {chapter}{\numberline {2}Phase 2: Implementation \& Injection of Malicious Firmware}{25}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Development of the Malicious Firmware}{25}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}Data Collection}{27}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.1.2}Behavioral Mechanisms of the Custom Firmware}{29}{subsection.2.1.2}%
+\contentsline {subsubsection}{UDP Covert Exfiltration Channel}{29}{section*.26}%
+\contentsline {subsubsection}{C2 Server Infrastructure}{30}{section*.28}%
+\contentsline {subsubsection}{MQTT Operation}{33}{section*.32}%
+\contentsline {subsubsection}{Web Interface and Deception}{36}{section*.35}%
+\contentsline {section}{\numberline {2.2}Man-in-the-Middle (MITM) Attack}{37}{section.2.2}%
+\contentsline {subsection}{\numberline {2.2.1}How OTA Update Works on Shelly Plus S Gen 1}{38}{subsection.2.2.1}%
+\contentsline {subsection}{\numberline {2.2.2}Variant A: Classic MITM --- ARP Poisoning \& DNS Spoofing}{39}{subsection.2.2.2}%
+\contentsline {subsubsection}{Attack Infrastructure}{39}{section*.40}%
+\contentsline {subsubsection}{Attack Execution and Results}{41}{section*.42}%
+\contentsline {subsection}{\numberline {2.2.3}Variant B: Direct OTA Endpoint Exploitation}{42}{subsection.2.2.3}%
+\contentsline {subsubsection}{Attack Execution}{43}{section*.45}%
+\contentsline {subsection}{\numberline {2.2.4}Post-Injection Results}{45}{subsection.2.2.4}%
+\contentsline {section}{\numberline {2.3}Pattern Recognition \& User Behavior Analytics}{47}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Telemetry Dataset}{47}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Behavior Profiling and Occupancy Inference Engine}{48}{subsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.3.3}C2 Web Dashboard and Habits Visualization}{51}{subsection.2.3.3}%
+\contentsline {chapter}{\numberline {3}Phase 3: Hardening \& Mitigation}{53}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Ensuring Integrity: Secure Update Implementation}{54}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}Firmware Signing}{55}{subsection.3.1.1}%
+\contentsline {subsubsection}{Key Pair Generation}{55}{section*.55}%
+\contentsline {subsubsection}{Signing Process}{56}{section*.57}%
+\contentsline {subsection}{\numberline {3.1.2}Signing Verification}{58}{subsection.3.1.2}%
+\contentsline {subsubsection}{Public Key Embedding}{58}{section*.59}%
+\contentsline {subsubsection}{Verification Handler}{59}{section*.61}%
+\contentsline {subsubsection}{Demonstration: Successful Signed Update}{60}{section*.63}%
+\contentsline {subsubsection}{Demonstration: Rejected Unsigned Firmware}{62}{section*.68}%
+\contentsline {section}{\numberline {3.2}Ensuring Confidentiality and Authenticity}{63}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Secure MQTT (MQTTS)}{63}{subsection.3.2.1}%
+\contentsline {subsubsection}{NTP Synchronization}{64}{section*.72}%
+\contentsline {subsubsection}{TLS Configuration}{64}{section*.73}%
+\contentsline {subsubsection}{Mitigation Effectiveness}{65}{section*.75}%
+\contentsline {subsection}{\numberline {3.2.2}Mutual Authentication (mTLS)}{66}{subsection.3.2.2}%
+\contentsline {subsubsection}{Certificate Hierarchy and Generation}{66}{section*.76}%
+\contentsline {subsubsection}{Mosquitto Broker Configuration}{68}{section*.78}%
+\contentsline {subsubsection}{Subscribing with mTLS}{68}{section*.79}%
+\contentsline {subsubsection}{Wireshark Verification: Encrypted Traffic}{70}{section*.82}%
+\contentsline {chapter}{Conclusions}{74}{chapter*.86}%
